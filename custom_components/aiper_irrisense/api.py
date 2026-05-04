@@ -483,9 +483,9 @@ class IrrisenseApi:
                 sn = device.get("sn")
                 if not sn:
                     continue
-                # Filter: only Irrisense serials (WRX prefix). Leave other aiper
+                # Filter: only Irrisense serials (WRX or WGX prefix). Leave other aiper
                 # devices to the sibling ha-aiper integration.
-                if not sn.upper().startswith("WRX"):
+                if not sn.upper().startswith(("WRX","WGX")):
                     continue
                 self._devices[sn] = device
                 zid = device.get("zoneId") or device.get("zone_id")
