@@ -49,7 +49,6 @@
       "active_elapsed": {"name": "Elapsed seconds"},
       "active_total": {"name": "Run total seconds"},
       "active_progress": {"name": "Progress"},
-      "active_pressure": {"name": "Water pressure"},
       "active_repair_layer": {"name": "Coverage passes"},
       "firmware": {"name": "Firmware version"},
       "water_today": {"name": "Water usage today"},
