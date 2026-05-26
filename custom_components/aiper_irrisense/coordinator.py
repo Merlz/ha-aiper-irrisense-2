@@ -984,14 +984,13 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         _m, _s = divmod(_rem, 60)
         duration_hms = f"{_h}:{_m:02d}:{_s:02d}"
 
-        # Surface the sprinkler-motion + pressure fields the APK's
+        # Surface the sprinkler-motion fields the APK's
         # `realTimeProgress` handler publishes:
         #   * `x`, `y`           — head position in the zone's local coord
         #                          system (updates every realTimeProgress
         #                          frame).
         #   * `repairLayer`      — coverage-pass counter (increments as the
         #                          head re-sweeps the zone).
-        #   * `waterpress`       — live line pressure.
         rl_val = _fallback("repairLayer")
 
         return {
@@ -1007,7 +1006,6 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             "x": _fallback("x"),
             "y": _fallback("y"),
             "repair_layer": rl_val,
-            "water_pressure": _fallback("waterpress"),
             "source": freshest_key,
             "source_ts": freshest_ts,
             "start_ts": start_ts,
