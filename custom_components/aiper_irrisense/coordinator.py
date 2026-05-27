@@ -195,6 +195,14 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         # doesn't flash 100% a minute into a 40-min run.
         self._run_last_progress: dict[str, float] = {}   # sn → last good progress
 
+        # HA-side defensive watchdog for Point-zone runs (issue #6).
+        # V3.8.7+ firmware unreliably tracks internal point-zone duration —
+        # observed wall-clock {23.9s, 67.8s, 71.6s, 75.2s} for a 60s command.
+        # When async_start_zone fires for a Point zone, we schedule a stop
+        # at point_time + grace; the task auto-cancels when the device
+        # cleanly transitions to status:0 or when the user presses Stop.
+        self._run_watchdog_tasks: dict[str, asyncio.Task[None]] = {}
+
         # Cadence (hours → seconds)
         opts = entry.options
         self._map_refresh = int(opts.get(CONF_MAP_REFRESH_HOURS, DEFAULT_MAP_REFRESH_HOURS)) * 3600
@@ -481,6 +489,10 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self.trigger_fast_poll()
             # Also ask the device for an immediate work snapshot.
             await self.hass.async_add_executor_job(self.api.query_work_info, sn)
+            if resolved_type == REGION_TYPE_POINT:
+                # Defensive HA-side stop for V3.8.7+ Point-zone duration
+                # unreliability — see issue #6.
+                self._schedule_run_watchdog(sn, map_id, kwargs["point_time"])
         return ok
 
     def _region_for(self, sn: str, map_id: int) -> dict[str, Any] | None:
@@ -504,6 +516,10 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         succeeded but the device is still running (avoids scaring the UI
         when MQTT round-trip is just slow).
         """
+        # User-initiated (or watchdog-initiated) stop — cancel any pending
+        # Point-zone watchdog so it doesn't fire later on a stopped device.
+        self._cancel_run_watchdog(sn)
+
         max_attempts = 3
         last_publish_ok = False
         for attempt in range(1, max_attempts + 1):
@@ -541,6 +557,88 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             )
 
         return last_publish_ok
+
+    # ------------------------------------------------------------------ #
+    # Point-zone run watchdog (issue #6)
+    # ------------------------------------------------------------------ #
+
+    # V3.8.7+ firmware can overshoot or undershoot Point-zone duration by
+    # 10+ seconds (observed wall-clock for a 60s command: 23.9s, 67.8s,
+    # 71.6s, 75.2s). Issuing a deterministic HA-side stop at duration +
+    # grace bounds the worst case from above without trying to fix the
+    # firmware itself. Grace covers all overshoots observed across V3.8.7
+    # and V3.9.4 with margin.
+    _POINT_WATCHDOG_GRACE_SEC = 30
+
+    def _schedule_run_watchdog(
+        self, sn: str, map_id: int, point_time_minutes: int
+    ) -> None:
+        """Schedule HA-side stop for a Point-zone run.
+
+        Fires `async_stop_zone` at ``point_time * 60 + grace`` seconds
+        after start, provided the device is still reporting `is_running`
+        for the same zone. Cancelled automatically when the device
+        cleanly transitions to status:0, when the user presses Stop, or
+        when the config entry unloads.
+        """
+        # Defense-in-depth: clear any prior watchdog before scheduling a
+        # new one. The status:0 cancel-hook in active_zone_state covers
+        # device-clean-stops (incl. device-button-stops, which still
+        # publish status:0), but there's a narrow timing window between
+        # start-publish and status:0 arrival where a stale watchdog from
+        # the previous run could still be in the registry.
+        self._cancel_run_watchdog(sn)
+        duration_sec = int(point_time_minutes) * 60
+        self._run_watchdog_tasks[sn] = self.entry.async_create_background_task(
+            self.hass,
+            self._run_watchdog(
+                sn, map_id, duration_sec, self._POINT_WATCHDOG_GRACE_SEC
+            ),
+            f"aiper_irrisense_run_watchdog_{sn}",
+        )
+
+    def _cancel_run_watchdog(self, sn: str) -> None:
+        """Cancel the pending watchdog for a device, if one is scheduled."""
+        task = self._run_watchdog_tasks.pop(sn, None)
+        if task is not None and not task.done():
+            task.cancel()
+
+    async def _run_watchdog(
+        self, sn: str, map_id: int, duration_sec: int, grace_sec: int
+    ) -> None:
+        """Wait the configured deadline, then fire stop if still running."""
+        try:
+            await asyncio.sleep(duration_sec + grace_sec)
+            state = self.active_zone_state(sn)
+            # Guard against stopping a different zone the user may have
+            # started in the meantime (the cancel-on-stop hook should
+            # have caught this case, but defend in depth).
+            if (
+                state
+                and state.get("is_running")
+                and state.get("zone_id") == map_id
+            ):
+                _LOGGER.warning(
+                    "Device sn=%s overran point_time by more than %ds; "
+                    "firing HA-side stop on zone_id=%s",
+                    sn, grace_sec, map_id,
+                )
+                await self.async_stop_zone(sn, map_id)
+        except Exception:  # noqa: BLE001 - diagnostic only
+            # Background tasks die silently on uncaught exceptions; surface
+            # any failure (active_zone_state malformed, async_stop_zone
+            # publish chain raises, etc.) so a stuck overrun doesn't
+            # disappear without a log line.
+            _LOGGER.exception(
+                "Watchdog for sn=%s zone_id=%s failed; device may continue overrunning",
+                sn, map_id,
+            )
+        finally:
+            # Always drop ourselves from the registry — either we ran to
+            # completion, the device beat us to it (cancel from
+            # active_zone_state), or the user pressed Stop (cancel from
+            # async_stop_zone).
+            self._run_watchdog_tasks.pop(sn, None)
 
     async def async_set_schedule_enabled(
         self, sn: str, task_ids: list[int], enabled: bool
@@ -728,6 +826,9 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self._run_duration.pop(sn, None)
             self._run_duration_pct.pop(sn, None)
             self._run_last_progress.pop(sn, None)
+            # Device cleanly stopped before the Point-zone watchdog fired —
+            # cancel it so it doesn't issue a no-op stop later (issue #6).
+            self._cancel_run_watchdog(sn)
             return None
         if status not in (1, "1", 2, "2"):
             # Unknown status — safest to treat as not-running.
