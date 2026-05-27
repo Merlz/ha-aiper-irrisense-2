@@ -581,9 +581,12 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         cleanly transitions to status:0, when the user presses Stop, or
         when the config entry unloads.
         """
-        # Cancel any prior watchdog for this device — e.g. a previous run
-        # the user stopped via the device button (no HA-side cancel hook
-        # fires in that case) and is now restarting via HA.
+        # Defense-in-depth: clear any prior watchdog before scheduling a
+        # new one. The status:0 cancel-hook in active_zone_state covers
+        # device-clean-stops (incl. device-button-stops, which still
+        # publish status:0), but there's a narrow timing window between
+        # start-publish and status:0 arrival where a stale watchdog from
+        # the previous run could still be in the registry.
         self._cancel_run_watchdog(sn)
         duration_sec = int(point_time_minutes) * 60
         self._run_watchdog_tasks[sn] = self.entry.async_create_background_task(
@@ -621,6 +624,15 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                     sn, grace_sec, map_id,
                 )
                 await self.async_stop_zone(sn, map_id)
+        except Exception:  # noqa: BLE001 - diagnostic only
+            # Background tasks die silently on uncaught exceptions; surface
+            # any failure (active_zone_state malformed, async_stop_zone
+            # publish chain raises, etc.) so a stuck overrun doesn't
+            # disappear without a log line.
+            _LOGGER.exception(
+                "Watchdog for sn=%s zone_id=%s failed; device may continue overrunning",
+                sn, map_id,
+            )
         finally:
             # Always drop ourselves from the registry — either we ran to
             # completion, the device beat us to it (cancel from
