@@ -1,6 +1,7 @@
 """Aiper Irrisense 2 — Home Assistant integration entry point."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -9,6 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .api import IrrisenseApi
@@ -90,34 +92,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     api.mqtt_debug = bool(entry.options.get(CONF_MQTT_DEBUG, False))
 
-    # Auth + device discovery on the executor
-    ok = await hass.async_add_executor_job(api.login)
-    if not ok:
-        return False
+    # Auth + device discovery on the executor. Wrapped in asyncio.wait_for
+    # so a slow cloud round-trip cannot push the setup coroutine past HA's
+    # 60s bootstrap window. ConfigEntryNotReady triggers HA's exponential
+    # backoff retry rather than the no-retry SETUP_ERROR path. See #11.
+    try:
+        await asyncio.wait_for(
+            hass.async_add_executor_job(api.login), timeout=15
+        )
+        devices = await asyncio.wait_for(
+            hass.async_add_executor_job(api.get_devices), timeout=15
+        )
+    except Exception as ex:  # noqa: BLE001 - covers TimeoutError + api.login's raised Exception variants
+        raise ConfigEntryNotReady(
+            f"Aiper cloud unavailable during setup: {ex}"
+        ) from ex
 
-    devices = await hass.async_add_executor_job(api.get_devices)
     if not devices:
         _LOGGER.warning("No Irrisense (WRX/WGX) devices found on this account")
 
     coordinator = IrrisenseCoordinator(hass, api, entry)
     await coordinator.async_config_entry_first_refresh()
 
-    # MQTT (optional; on by default)
+    # MQTT (optional; on by default) — runs as an entry-bound background
+    # task so a slow AWS IoT connect (~30s blocking) plus per-device
+    # subscribe loop do not delay the setup coroutine. The integration
+    # comes up REST-poll-only; MQTT real-time updates join in the
+    # background as soon as connect + subscribes complete. See #11.
     if entry.options.get(CONF_ENABLE_MQTT, True):
-        mqtt_ok = await hass.async_add_executor_job(api.connect_mqtt)
-        if mqtt_ok:
-            for dev in devices:
-                sn = dev.get("sn")
-                if not sn:
-                    continue
-                await hass.async_add_executor_job(
-                    api.subscribe_device, sn, coordinator.handle_mqtt_message
-                )
-                # Nudge the device to report current state.
-                await hass.async_add_executor_job(api.query_work_info, sn)
-                await hass.async_add_executor_job(api.request_shadow, sn)
-        else:
-            _LOGGER.warning("Irrisense MQTT connect failed — realtime disabled")
+        entry.async_create_background_task(
+            hass,
+            _async_setup_mqtt_background(hass, api, devices, coordinator),
+            f"aiper_irrisense_mqtt_setup_{entry.entry_id}",
+        )
 
     # Register devices in the device registry.
     device_registry = dr.async_get(hass)
@@ -147,6 +154,41 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_services(hass)
     return True
+
+
+async def _async_setup_mqtt_background(
+    hass: HomeAssistant,
+    api: IrrisenseApi,
+    devices: list[dict[str, Any]],
+    coordinator: IrrisenseCoordinator,
+) -> None:
+    """MQTT connect + per-device subscribe, off the setup path.
+
+    Issue #11: AWS IoT `connect_mqtt` is up to 30s blocking
+    (`configureConnectDisconnectTimeout(30)`) and the per-device
+    subscribe / query_work_info / request_shadow loop adds several
+    seconds on top. Together they push the setup coroutine over HA's
+    60s bootstrap window. Running this off the setup path keeps the
+    integration responsive: entities come online via REST-only
+    polling first, MQTT layers on as soon as the connect resolves.
+    """
+    try:
+        mqtt_ok = await hass.async_add_executor_job(api.connect_mqtt)
+        if not mqtt_ok:
+            _LOGGER.warning("Irrisense MQTT connect failed — realtime disabled")
+            return
+        for dev in devices:
+            sn = dev.get("sn")
+            if not sn:
+                continue
+            await hass.async_add_executor_job(
+                api.subscribe_device, sn, coordinator.handle_mqtt_message
+            )
+            # Nudge the device to report current state.
+            await hass.async_add_executor_job(api.query_work_info, sn)
+            await hass.async_add_executor_job(api.request_shadow, sn)
+    except Exception:  # noqa: BLE001 - diagnostic only
+        _LOGGER.exception("Irrisense MQTT background setup failed")
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
