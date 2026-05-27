@@ -10,7 +10,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .api import IrrisenseApi
@@ -103,9 +103,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         devices = await asyncio.wait_for(
             hass.async_add_executor_job(api.get_devices), timeout=15
         )
-    except Exception as ex:  # noqa: BLE001 - covers TimeoutError + api.login's raised Exception variants
+    except TimeoutError as ex:
         raise ConfigEntryNotReady(
-            f"Aiper cloud unavailable during setup: {ex}"
+            f"Aiper cloud timeout during setup (check network): {ex}"
+        ) from ex
+    except Exception as ex:  # noqa: BLE001 - api.login distinguishes auth vs other via message text
+        # api.login raises Exception("Login failed: ...") on cloud-rejected
+        # credentials and Exception("No token in login response: ...") on
+        # protocol errors. Both are permanent config problems that should
+        # trigger HA's reauth flow rather than infinite ConfigEntryNotReady
+        # backoff. Discriminate by message prefix; anything else falls
+        # back to transient cloud-error retry.
+        if "Login failed" in str(ex) or "No token" in str(ex):
+            raise ConfigEntryAuthFailed(
+                f"Aiper authentication failed: {ex}"
+            ) from ex
+        raise ConfigEntryNotReady(
+            f"Aiper cloud error during setup: {ex}"
         ) from ex
 
     if not devices:
@@ -119,7 +133,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # subscribe loop do not delay the setup coroutine. The integration
     # comes up REST-poll-only; MQTT real-time updates join in the
     # background as soon as connect + subscribes complete. See #11.
-    if entry.options.get(CONF_ENABLE_MQTT, True):
+    # Skipped entirely if the account has no Irrisense devices —
+    # connecting MQTT to subscribe to nothing is a 30s waste.
+    if entry.options.get(CONF_ENABLE_MQTT, True) and devices:
         entry.async_create_background_task(
             hass,
             _async_setup_mqtt_background(hass, api, devices, coordinator),
@@ -187,7 +203,7 @@ async def _async_setup_mqtt_background(
             # Nudge the device to report current state.
             await hass.async_add_executor_job(api.query_work_info, sn)
             await hass.async_add_executor_job(api.request_shadow, sn)
-    except Exception:  # noqa: BLE001 - diagnostic only
+    except Exception:  # noqa: BLE001 - MQTT is optional; don't crash integration load
         _LOGGER.exception("Irrisense MQTT background setup failed")
 
 
