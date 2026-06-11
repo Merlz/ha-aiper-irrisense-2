@@ -406,7 +406,9 @@ class WifiRssiSensor(IrrisenseEntity, SensorEntity):
 class TotalWaterYieldSensor(IrrisenseEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.WATER
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_native_unit_of_measurement = UnitOfVolume.LITERS
+    # Backend reports gallons (see the inch-based depth presets in const.py);
+    # declare gallons and let HA convert for metric users.
+    _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
     _attr_icon = "mdi:water"
     _attr_translation_key = "total_water_yield"
 
@@ -427,7 +429,7 @@ class TotalWaterYieldSensor(IrrisenseEntity, SensorEntity):
 class TotalWaterSavingSensor(IrrisenseEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.WATER
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_native_unit_of_measurement = UnitOfVolume.LITERS
+    _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
     _attr_icon = "mdi:water-check"
     _attr_translation_key = "total_water_saving"
 
