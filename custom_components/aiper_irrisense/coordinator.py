@@ -26,6 +26,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -242,9 +243,17 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             # enough, but it also catches new devices being added).
             await self.hass.async_add_executor_job(self.api.get_devices)
 
+            device_registry = dr.async_get(self.hass)
             for dev in self.devices:
                 sn = dev.get("sn")
                 if not sn:
+                    continue
+                # Skip devices the user has disabled in HA's device registry.
+                dev_entry = device_registry.async_get_device(
+                    identifiers={(DOMAIN, sn)}
+                )
+                if dev_entry is not None and dev_entry.disabled_by is not None:
+                    _LOGGER.debug("Skipping disabled device %s in refresh", sn)
                     continue
                 await self._refresh_device(sn, dev)
 
