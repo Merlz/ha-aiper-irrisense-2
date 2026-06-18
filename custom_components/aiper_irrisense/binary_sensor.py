@@ -66,19 +66,10 @@ class WateringBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        # Prefer the most recent MQTT setWorkMode ACK or workInfoReport.
-        mqtt = self._mqtt
-        for key in ("up_setWorkMode", "up_workInfoReport", "up_workInfo", "up_realtimeStatus"):
-            msg = mqtt.get(key)
-            if isinstance(msg, dict):
-                body = msg.get("data")
-                if isinstance(body, dict):
-                    status = body.get("status")
-                    if status in (1, "1"):
-                        return True
-                    if status in (0, "0", 2, "2"):
-                        return False
-        return False
+        # Delegate to active_zone_state — its freshest-frame pick across
+        # _ACTIVE_SOURCES avoids stale-slot divergence (issue #4).
+        state = self.coordinator.active_zone_state(self._sn)
+        return bool(state and state.get("is_running"))
 
 
 class RainSensingBinarySensor(IrrisenseEntity, BinarySensorEntity):
