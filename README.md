@@ -21,7 +21,7 @@ use them in automations and dashboards.
 - **Control:** start / stop watering per zone, pick dose (Area / Line) or
   duration (Point) from a zone-aware select entity.
 - **Live telemetry:** active zone, elapsed / remaining seconds, progress %,
-  coverage passes, water pressure, rain-sensing state.
+  coverage passes, rain-sensing state.
 - **Device info:** firmware versions (main / MCU / valve), Wi-Fi RSSI,
   lifetime water delivered / saved, watering-event count.
 - **Settings:** toggle rain-sensing, wind-sensing, drainage / pesticide /
@@ -76,12 +76,11 @@ so a device called *IrriSense Garden* will have
 | `select`        | Watering zone                 | Options are the zones on the device's zone map                          |
 | `select`        | Dose / Duration               | Shape-shifts: `3mm / 6mm / 13mm` for Area/Line, `1min / 5min / 10min` for Point |
 | `select`        | Nozzle type                   | Stream / Rotor / etc.                                                   |
-| `sensor`        | Active zone                   | Name of the zone currently running. Key attributes: `dose_label`, `duration_seconds`, `duration_pending`, `start_time`, `elapsed_seconds`, `repair_layer`, `progress`, `water_pressure_kpa` |
+| `sensor`        | Active zone                   | Name of the zone currently running. Key attributes: `dose_label`, `duration_seconds`, `duration_pending`, `start_time`, `elapsed_seconds`, `repair_layer`, `progress` |
 | `sensor`        | Progress                      | 0–100 %. Spike-filtered                                                 |
 | `sensor`        | Elapsed seconds               | Time since the current run started                                      |
 | `sensor`        | Run total seconds             | Expected duration of the current run                                    |
 | `sensor`        | Coverage passes               | `repair_layer` from the device (0-indexed; humans usually want `+1`)    |
-| `sensor`        | Water pressure                | kPa                                                                     |
 | `sensor`        | WiFi signal                   | dBm                                                                     |
 | `sensor`        | Firmware version / MCU / Valve| Three separate sensors                                                  |
 | `sensor`        | Total water delivered / saved | Litres (lifetime)                                                       |

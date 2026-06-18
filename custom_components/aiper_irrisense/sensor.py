@@ -37,7 +37,6 @@ async def async_setup_entry(
                 ActiveElapsedSensor(coordinator, sn),
                 ActiveTotalSensor(coordinator, sn),
                 ActiveProgressSensor(coordinator, sn),
-                ActivePressureSensor(coordinator, sn),
                 ActiveRepairLayerSensor(coordinator, sn),
                 FirmwareSensor(coordinator, sn),
                 McuFirmwareSensor(coordinator, sn),
@@ -104,11 +103,10 @@ class ActiveZoneSensor(IrrisenseEntity, SensorEntity):
         if isinstance(start_ts, (int, float)):
             start_iso = datetime.fromtimestamp(start_ts, tz=timezone.utc).isoformat()
 
-        # Surface sprinkler-motion + pressure fields the APK's
-        # realTimeProgress handler publishes. `x` / `y` are the sprinkler
-        # head position in the zone's coordinate system; `repair_layer` is
-        # the coverage-pass counter; `water_pressure_kpa` is the live line
-        # pressure.
+        # Surface sprinkler-motion fields the APK's realTimeProgress
+        # handler publishes. `x` / `y` are the sprinkler head position
+        # in the zone's coordinate system; `repair_layer` is the
+        # coverage-pass counter.
         return {
             "is_running": True,
             "zone_id": state.get("zone_id"),
@@ -123,7 +121,6 @@ class ActiveZoneSensor(IrrisenseEntity, SensorEntity):
             "x": state.get("x"),
             "y": state.get("y"),
             "repair_layer": state.get("repair_layer"),
-            "water_pressure_kpa": state.get("water_pressure"),
             "source": state.get("source"),
             "start_time": start_iso,
             "duration_seconds": state.get("duration_seconds"),
@@ -253,34 +250,6 @@ class ActiveProgressSensor(_ActiveMetricBase):
             and total > 0
         ):
             return round(max(0.0, min(100.0, (t / total) * 100.0)), 1)
-        return None
-
-
-class ActivePressureSensor(_ActiveMetricBase):
-    """Water-line pressure in kPa during the current run.
-
-    Confirmed from the APK's realTimeProgress handler — the wire key is
-    ``waterpress`` (no underscore). The device publishes this live on
-    every progress frame and it's handy for a health sub-panel.
-    """
-
-    _attr_icon = "mdi:gauge"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "kPa"
-    _attr_translation_key = "active_pressure"
-
-    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
-        super().__init__(coordinator, sn, "active_pressure")
-        self._attr_name = "Water pressure"
-
-    @property
-    def native_value(self) -> float | None:
-        live = self._live()
-        if not live:
-            return None
-        p = live.get("water_pressure")
-        if isinstance(p, (int, float)):
-            return round(float(p), 1)
         return None
 
 
