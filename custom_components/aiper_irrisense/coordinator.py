@@ -51,7 +51,6 @@ from .const import (
     default_dose_label_for_region_type,
     label_for_point_time,
     label_for_water_yield,
-    parse_dose_label,
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 

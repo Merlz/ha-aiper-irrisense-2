@@ -20,7 +20,7 @@ import random
 import threading
 import time
 import weakref
-from collections import defaultdict, deque
+from collections import defaultdict
 from typing import Any, Callable
 
 import aiohttp
@@ -45,7 +45,6 @@ from .const import (
     TOPIC_READ,
     TOPIC_SHADOW_GET,
     TOPIC_SHADOW_GET_REQUEST,
-    TOPIC_SHADOW_UPDATE,
     TOPIC_SHADOW_UPDATE_ACCEPTED,
     TOPIC_SHADOW_UPDATE_DELTA,
     TOPIC_SHADOW_UPDATE_DOCUMENTS,
