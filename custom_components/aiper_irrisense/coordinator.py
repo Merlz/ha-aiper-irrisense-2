@@ -650,10 +650,17 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self._run_watchdog_tasks.pop(sn, None)
 
     async def async_set_schedule_enabled(
-        self, sn: str, task_ids: list[int], enabled: bool
+        self, sn: str, task: dict[str, Any] | None, enabled: bool
     ) -> bool:
+        # The backend rejects a partial enable-toggle; the working path is
+        # `updateWateringTaskV2` with the full task object and the `enabled`
+        # field flipped. The switch passes the task it already holds.
+        if not isinstance(task, dict):
+            _LOGGER.warning("ScheduleSwitch: no task to update for %s", sn)
+            return False
+        body = {**task, "enabled": 1 if enabled else 0}
         ok = await self.hass.async_add_executor_job(
-            self.api.set_schedule_enabled, sn, task_ids, enabled
+            self.api.update_watering_task, sn, body
         )
         if ok:
             # Force a settings refresh on next poll.
@@ -671,8 +678,20 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         return ok
 
     async def async_set_watering_setting(self, sn: str, settings: dict[str, Any]) -> bool:
+        # `updateWateringSetting` requires the full setting object (a partial
+        # body is rejected with code 6002). Merge the changed keys onto the
+        # last-known setting snapshot so untouched fields are preserved. Without
+        # a snapshot (device not polled yet) a partial write would just be
+        # rejected, so fail fast and let the caller surface it.
+        current = (self.data or {}).get(sn, {}).get("setting")
+        if not isinstance(current, dict):
+            _LOGGER.warning(
+                "Cannot update watering setting for %s: no setting snapshot yet", sn
+            )
+            return False
+        body = {**current, **settings}
         ok = await self.hass.async_add_executor_job(
-            self.api.set_watering_setting, sn, settings
+            self.api.set_watering_setting, sn, body
         )
         if ok:
             self._last_settings_fetch.pop(sn, None)

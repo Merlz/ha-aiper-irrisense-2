@@ -543,6 +543,30 @@ class IrrisenseApi:
             _LOGGER.debug("WR call %s error: %s", path, err)
         return None
 
+    def _wr_write(self, path: str, body: dict | None = None) -> bool:
+        """POST to a /wr/... write endpoint and report success.
+
+        Unlike :meth:`_wr`, success is the response status (``_is_success``),
+        NOT the presence of a ``data`` payload: the update endpoints answer a
+        successful write with ``{"code": "200", "successful": true}`` and no
+        ``data`` field, so keying success off ``data`` would treat every
+        successful write as a failure.
+        """
+        try:
+            payload = self._call_encrypted("POST", path, body or {})
+            if self._is_success(payload):
+                return True
+            _LOGGER.debug(
+                "WR write %s not successful: code=%s msg=%s body=%s",
+                path,
+                payload.get("code") if isinstance(payload, dict) else None,
+                (payload.get("msg") or payload.get("message")) if isinstance(payload, dict) else None,
+                body,
+            )
+        except Exception as err:
+            _LOGGER.debug("WR write %s error: %s", path, err)
+        return False
+
     # -- Reads --
     def get_wr_equipment_info(self, sn: str) -> dict | None:
         """Irrisense-specific status (firmware, battery, active zone, etc.)."""
@@ -708,13 +732,24 @@ class IrrisenseApi:
             return None
 
     # -- Writes --
-    def set_schedule_enabled(self, sn: str, task_ids: list[int], enabled: bool) -> bool:
-        body = {"sn": sn, "taskIds": task_ids, "enabled": 1 if enabled else 0}
-        return self._wr("/wr/batchUpdateWrWateringTaskEnabledV2", body) is not None
+    def update_watering_task(self, sn: str, task: dict[str, Any]) -> bool:
+        """Enable/disable (or otherwise update) a scheduled watering task.
+
+        The backend has no partial enable-toggle: a stripped
+        ``{sn, taskIds, enabled}`` body to ``batchUpdateWrWateringTaskEnabledV2``
+        is rejected with code 6002 ("required fields missing"). The working
+        path is ``updateWateringTaskV2`` with the FULL task object (the caller
+        flips the ``enabled`` field on the task it already holds).
+        """
+        body = {"sn": sn, **task}
+        return self._wr_write("/wr/updateWateringTaskV2", body)
 
     def set_watering_setting(self, sn: str, settings: dict[str, Any]) -> bool:
+        # `updateWateringSetting` requires the FULL setting object; a partial
+        # body is rejected with code 6002. The coordinator merges the changed
+        # keys onto the last-known setting snapshot before calling this.
         body = {"sn": sn, **settings}
-        return self._wr("/wr/updateWateringSetting", body) is not None
+        return self._wr_write("/wr/updateWateringSetting", body)
 
     def set_nozzle_type(self, sn: str, nozzle_type: int) -> bool:
         # The `/wr/updateNozzleTypeSetting` REST endpoint uses a 1-indexed
@@ -724,19 +759,19 @@ class IrrisenseApi:
         #     updateNozzleTypeSetting(sn, value == 1 ? 2 : 1)
         server_value = 2 if int(nozzle_type) == 1 else 1
         body = {"sn": sn, "nozzleType": server_value}
-        return self._wr("/wr/updateNozzleTypeSetting", body) is not None
+        return self._wr_write("/wr/updateNozzleTypeSetting", body)
 
     def set_water_shortage_reminder(self, sn: str, enabled: bool) -> bool:
         body = {"sn": sn, "waterShortageReminder": 1 if enabled else 0}
-        return self._wr("/wr/updateWaterShortageReminderSetting", body) is not None
+        return self._wr_write("/wr/updateWaterShortageReminderSetting", body)
 
     def set_task_reminder(self, sn: str, enabled: bool) -> bool:
         body = {"sn": sn, "taskReminder": 1 if enabled else 0}
-        return self._wr("/wr/updateTaskReminderSetting", body) is not None
+        return self._wr_write("/wr/updateTaskReminderSetting", body)
 
     def set_pesticide_reminder(self, sn: str, enabled: bool) -> bool:
         body = {"sn": sn, "pesticideReminder": 1 if enabled else 0}
-        return self._wr("/wr/updatePesticideReminderSetting", body) is not None
+        return self._wr_write("/wr/updatePesticideReminderSetting", body)
 
     def set_drainage_reminder(self, sn: str, enabled: bool) -> bool:
         """Drainage reminder lives under `updateTaskReminderSetting` in the
@@ -746,11 +781,10 @@ class IrrisenseApi:
         body = {"sn": sn, "drainageReminder": 1 if enabled else 0}
         # No known dedicated endpoint yet — send as a field update on the
         # generic reminder setter if it exists; otherwise fall back to the
-        # watering-setting path (some backends accept reminder keys there).
-        result = self._wr("/wr/updateDrainageReminderSetting", body)
-        if result is None:
-            result = self._wr("/wr/updateTaskReminderSetting", body)
-        return result is not None
+        # generic task-reminder endpoint.
+        if self._wr_write("/wr/updateDrainageReminderSetting", body):
+            return True
+        return self._wr_write("/wr/updateTaskReminderSetting", body)
 
     # ------------------------------------------------------------------ #
     # MQTT — AWS IoT WebSocket (SigV4)
