@@ -16,6 +16,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -178,10 +179,12 @@ class ScheduleSwitch(IrrisenseEntity, SwitchEntity):
         }
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        await self.coordinator.async_set_schedule_enabled(self._sn, [self._task_id], True)
+        if not await self.coordinator.async_set_schedule_enabled(self._sn, self._task(), True):
+            raise HomeAssistantError(f"Failed to enable {self._attr_name}")
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        await self.coordinator.async_set_schedule_enabled(self._sn, [self._task_id], False)
+        if not await self.coordinator.async_set_schedule_enabled(self._sn, self._task(), False):
+            raise HomeAssistantError(f"Failed to disable {self._attr_name}")
 
 
 # --------------------------------------------------------------------------- #
@@ -210,13 +213,18 @@ class _SettingSwitch(IrrisenseEntity, SwitchEntity):
         return False
 
     async def _write(self, value: int) -> None:
+        ok = False
         if self._writer == "setting":
-            await self.coordinator.async_set_watering_setting(
+            ok = await self.coordinator.async_set_watering_setting(
                 self._sn, {self._setting_key: value}
             )
         elif self._writer == "reminder":
-            await self.coordinator.async_set_reminder(
+            ok = await self.coordinator.async_set_reminder(
                 self._sn, self._setting_key, bool(value)
+            )
+        if not ok:
+            raise HomeAssistantError(
+                f"Failed to update {self._attr_name or self._setting_key}"
             )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
