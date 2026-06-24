@@ -774,14 +774,13 @@ class IrrisenseApi:
         return self._wr_write("/wr/updatePesticideReminderSetting", body)
 
     def set_drainage_reminder(self, sn: str, enabled: bool) -> bool:
-        """Drainage reminder lives under `updateTaskReminderSetting` in the
-        mobile app (shared endpoint toggles all four), but we also try a
-        dedicated endpoint first in case the backend exposes one.
+        """Toggle the drainage reminder.
+
+        The dedicated `/wr/updateDrainageReminderSetting` endpoint works (the
+        write is reflected by `getReminderSetting`). The `updateTaskReminderSetting`
+        call is a defensive fallback for a backend variant that lacks it.
         """
         body = {"sn": sn, "drainageReminder": 1 if enabled else 0}
-        # No known dedicated endpoint yet — send as a field update on the
-        # generic reminder setter if it exists; otherwise fall back to the
-        # generic task-reminder endpoint.
         if self._wr_write("/wr/updateDrainageReminderSetting", body):
             return True
         return self._wr_write("/wr/updateTaskReminderSetting", body)
