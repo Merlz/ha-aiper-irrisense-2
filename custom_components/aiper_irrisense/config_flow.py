@@ -63,7 +63,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         await hass.async_add_executor_job(api.disconnect)
 
     if not devices:
-        # Account authenticated but no Irrisense (WRX / WGX) devices were returned
+        # Account authenticated but no Irrisense (WRX / WGX / WRZ) devices were returned
         # — probably wrong account for Irrisense, or the user only owns pool cleaners.
         raise NoIrrisenseDevices
 
@@ -187,4 +187,4 @@ class InvalidAuth(HomeAssistantError):
 
 
 class NoIrrisenseDevices(HomeAssistantError):
-    """Account has no Irrisense (WRX / WGX) devices."""
+    """Account has no Irrisense (WRX / WGX / WRZ) devices."""

@@ -123,7 +123,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ) from ex
 
     if not devices:
-        _LOGGER.warning("No Irrisense (WRX/WGX) devices found on this account")
+        _LOGGER.warning("No Irrisense (WRX/WGX/WRZ) devices found on this account")
 
     # Filter out devices the user has disabled in HA's device registry.
     # Devices not yet in the registry are let through so first-time setup

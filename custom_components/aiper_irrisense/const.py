@@ -20,8 +20,9 @@ API_ENDPOINTS: Final = {
 }
 
 # Irrisense serial prefixes. `WRX` is the original/online-store SKU; `WGX` is
-# the big-box-retail variant (e.g. Costco). Both speak the same wire protocol.
-IRRISENSE_SERIAL_PREFIXES: Final = ("WRX", "WGX")
+# the big-box-retail variant (e.g. Costco); `WRZ` is a further retail variant.
+# All speak the same wire protocol.
+IRRISENSE_SERIAL_PREFIXES: Final = ("WRX", "WGX", "WRZ")
 
 # Model string as written into the S3 zone-map path.
 IRRISENSE_MODEL: Final = "IrriSense_2"
