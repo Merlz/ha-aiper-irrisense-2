@@ -97,11 +97,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # 60s bootstrap window. ConfigEntryNotReady triggers HA's exponential
     # backoff retry rather than the no-retry SETUP_ERROR path. See #11.
     try:
+        # login() is a two-call chain (/login then the OpenID-token fetch),
+        # each an executor request that can take up to ~30s with backoff, so
+        # 15s was too tight on a slow cloud round-trip and tripped a spurious
+        # ConfigEntryNotReady. 30s + 20s keeps worst-case setup under HA's 60s
+        # bootstrap window while matching what these calls actually need.
         await asyncio.wait_for(
-            hass.async_add_executor_job(api.login), timeout=15
+            hass.async_add_executor_job(api.login), timeout=30
         )
         devices = await asyncio.wait_for(
-            hass.async_add_executor_job(api.get_devices), timeout=15
+            hass.async_add_executor_job(api.get_devices), timeout=20
         )
     except TimeoutError as ex:
         raise ConfigEntryNotReady(
