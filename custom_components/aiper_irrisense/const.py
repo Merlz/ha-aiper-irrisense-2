@@ -19,10 +19,17 @@ API_ENDPOINTS: Final = {
     "asia": "https://apiasia.aiper.com",
 }
 
-# Irrisense serial prefixes. `WRX` is the original/online-store SKU; `WGX` is
-# the big-box-retail variant (e.g. Costco); `WCX` is a further retail SKU
-# (Aiper US store). All speak the same wire protocol.
-IRRISENSE_SERIAL_PREFIXES: Final = ("WRX", "WGX", "WCX")
+# Irrisense serial prefixes. The Aiper app's own device-list classifies
+# IrriSense models by the first **two** letters of the serial:
+#   * `WR` — IrriSense 2 (original / Irrigo WR / IrriSense WR)
+#   * `WG` — IrriSense N2 (big-box retail; Home Depot / Lowe's / Best Buy)
+#   * `WC` — IrriSense 2 Chromatic / IrriSense II (further retail variant)
+#   * `WL` — IrriSense 2 SE
+# The third letter is a production-batch indicator (WRX, WRZ, WGX, WCX, ...);
+# all share the same wire protocol. Matching on the 2-letter family keeps us
+# in sync with the app's behaviour and avoids a new release every time a new
+# batch letter ships.
+IRRISENSE_SERIAL_PREFIXES: Final = ("WR", "WG", "WC", "WL")
 
 # Model string as written into the S3 zone-map path.
 IRRISENSE_MODEL: Final = "IrriSense_2"

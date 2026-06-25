@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Aiper Irrisense 2",
-        "description": "Sign in with your Aiper account. Only Irrisense devices (WRX / WGX / WCX serial prefix) will be added.",
+        "description": "Sign in with your Aiper account. Only IrriSense devices (WR / WG / WC / WL serial prefix) will be added.",
         "data": {
           "username": "Email address",
           "password": "Password",
@@ -21,7 +21,7 @@
     "error": {
       "invalid_auth": "Invalid credentials.",
       "cannot_connect": "Failed to connect to the Aiper cloud.",
-      "no_devices": "No Irrisense (WRX / WGX / WCX) devices were found on this account.",
+      "no_devices": "No IrriSense (WR / WG / WC / WL) devices were found on this account.",
       "unknown": "Unexpected error."
     },
     "abort": {
