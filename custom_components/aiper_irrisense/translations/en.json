@@ -38,7 +38,8 @@
           "poll_interval": "Poll interval (seconds)",
           "map_refresh_hours": "Zone-map refresh interval (hours)",
           "history_refresh_hours": "History / stats refresh (hours)",
-          "reminder_refresh_hours": "Nozzle / reminder refresh (hours)"
+          "reminder_refresh_hours": "Nozzle / reminder refresh (hours)",
+          "enable_experimental_sensors": "Enable experimental sensors (pesticide usage, skip history)"
         }
       }
     }
@@ -54,7 +55,9 @@
       "water_today": {"name": "Water usage today"},
       "water_week": {"name": "Water usage this week"},
       "water_month": {"name": "Water usage this month"},
-      "last_zone": {"name": "Last watered zone"}
+      "last_zone": {"name": "Last watered zone"},
+      "last_skip": {"name": "Last skip reason"},
+      "pesticide_usage": {"name": "Pesticide usage zones"}
     },
     "binary_sensor": {
       "online": {"name": "Online"},

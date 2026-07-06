@@ -42,6 +42,7 @@ CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_MAP_REFRESH_HOURS: Final = "map_refresh_hours"
 CONF_HISTORY_REFRESH_HOURS: Final = "history_refresh_hours"
 CONF_REMINDER_REFRESH_HOURS: Final = "reminder_refresh_hours"
+CONF_ENABLE_EXPERIMENTAL_SENSORS: Final = "enable_experimental_sensors"
 
 DEFAULT_SCAN_INTERVAL: Final = 120  # seconds
 DEFAULT_FAST_SCAN_INTERVAL: Final = 5  # seconds during an active watering event

@@ -14,6 +14,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .api import IrrisenseApi
 from .const import (
+    CONF_ENABLE_EXPERIMENTAL_SENSORS,
     CONF_ENABLE_MQTT,
     CONF_HISTORY_REFRESH_HOURS,
     CONF_MAP_REFRESH_HOURS,
@@ -177,6 +178,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_REMINDER_REFRESH_HOURS,
                     default=current.get(CONF_REMINDER_REFRESH_HOURS, DEFAULT_REMINDER_REFRESH_HOURS),
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=168)),
+                vol.Optional(
+                    CONF_ENABLE_EXPERIMENTAL_SENSORS,
+                    default=current.get(CONF_ENABLE_EXPERIMENTAL_SENSORS, False),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

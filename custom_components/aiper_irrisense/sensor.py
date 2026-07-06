@@ -17,7 +17,7 @@ from homeassistant.const import EntityCategory, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_ENABLE_EXPERIMENTAL_SENSORS, DOMAIN
 from .coordinator import IrrisenseCoordinator
 from .entity import IrrisenseEntity
 
@@ -48,6 +48,13 @@ async def async_setup_entry(
                 LastWateringZoneSensor(coordinator, sn),
             ]
         )
+        if entry.options.get(CONF_ENABLE_EXPERIMENTAL_SENSORS, False):
+            entities.extend(
+                [
+                    SkipHistorySensor(coordinator, sn),
+                    PesticideUsageSensor(coordinator, sn),
+                ]
+            )
     async_add_entities(entities)
 
 
@@ -482,3 +489,112 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
                 "depth_mm": last.get("depth") or last.get("waterYield"),
             }
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Experimental (opt-in) — pesticide usage + skip history. Both come back empty
+# on devices with no cartridge bound / no skipped runs, so the sensors report
+# None until real data appears. Payload shapes are best-effort (dug
+# defensively) since they can't be exercised on a non-sprayer test device.
+# --------------------------------------------------------------------------- #
+
+# Known skipType reasons; unmapped ints fall back to "type_<n>".
+SKIP_TYPE_LABELS: dict[int, str] = {
+    3: "weather_wind",
+    4: "weather_rain",
+    5: "on_rain",
+    9: "manual_task",
+}
+
+
+def _records(payload: Any) -> list[dict[str, Any]]:
+    """Records list from a `_wr` result. `_wr` already unwraps the response
+    `data`, so this is either a bare list or a dict wrapping one under
+    list/records/data."""
+    if isinstance(payload, dict):
+        payload = payload.get("list") or payload.get("records") or payload.get("data")
+    if isinstance(payload, list):
+        return [r for r in payload if isinstance(r, dict)]
+    return []
+
+
+class SkipHistorySensor(IrrisenseEntity, SensorEntity):
+    """Reason the most recent scheduled run was skipped (rain, wind, etc.)."""
+
+    _attr_icon = "mdi:calendar-remove"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "last_skip"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_skip")
+        self._attr_name = "Last skip reason"
+
+    def _latest(self) -> dict[str, Any] | None:
+        records = _records(self._slot.get("skip"))
+        if not records:
+            return None
+        return max(records, key=lambda r: r.get("skipTaskUtcTimestampSecond") or 0)
+
+    @property
+    def native_value(self) -> str | None:
+        latest = self._latest()
+        if latest is None:
+            return None
+        stype = latest.get("skipType")
+        if not isinstance(stype, int):
+            return None
+        return SKIP_TYPE_LABELS.get(stype, f"type_{stype}")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        records = _records(self._slot.get("skip"))
+        if not records:
+            return None
+        latest = max(records, key=lambda r: r.get("skipTaskUtcTimestampSecond") or 0)
+        ts = latest.get("skipTaskUtcTimestampSecond")
+        skipped_at = None
+        if isinstance(ts, int):
+            skipped_at = datetime.fromtimestamp(ts, timezone.utc).isoformat()
+        return {
+            "skipped_at": skipped_at,
+            "skip_type": latest.get("skipType"),
+            "task_id": latest.get("taskId"),
+            "plan_id": latest.get("planId"),
+            "count": len(records),
+        }
+
+
+class PesticideUsageSensor(IrrisenseEntity, SensorEntity):
+    """Number of zones with logged pesticide usage; the per-zone payload is
+    carried in the attributes (IrriSense 2 sprayer module)."""
+
+    _attr_icon = "mdi:spray"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_translation_key = "pesticide_usage"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "pesticide_usage")
+        self._attr_name = "Pesticide usage zones"
+
+    def _usage_list(self) -> list[dict[str, Any]] | None:
+        # `_wr` already unwraps the response `data`, so slot["pesticide"] is
+        # the MapPesticideUsage object itself (mapId + mapPesticideUsageList).
+        payload = self._slot.get("pesticide")
+        if not isinstance(payload, dict):
+            return None
+        regions = payload.get("mapPesticideUsageList")
+        if isinstance(regions, list):
+            return [r for r in regions if isinstance(r, dict)]
+        return None
+
+    @property
+    def native_value(self) -> int | None:
+        regions = self._usage_list()
+        return None if regions is None else len(regions)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        regions = self._usage_list()
+        if regions is None:
+            return None
+        return {"regions": regions[:20]}

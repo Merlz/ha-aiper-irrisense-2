@@ -174,6 +174,37 @@ def _find_map_url(obj: Any) -> str | None:
     return None
 
 
+def _find_map_id(obj: Any) -> int | None:
+    """Recursively scan a getMapList response for the map-document id.
+
+    Mirrors :func:`_find_map_url`: prefer the explicitly-named keys, then
+    fall back to a bare ``id`` on a map-looking object. Returns the first
+    integer id found, or None.
+    """
+    if isinstance(obj, dict):
+        for key in ("mapId", "map_id"):
+            val = obj.get(key)
+            if isinstance(val, int):
+                return val
+        # A map object that also carries the S3 url is the map document;
+        # its bare `id` is the map id.
+        if "id" in obj and _find_map_url(obj) is not None:
+            val = obj.get("id")
+            if isinstance(val, int):
+                return val
+        for val in obj.values():
+            found = _find_map_id(val)
+            if found is not None:
+                return found
+        return None
+    if isinstance(obj, list):
+        for item in obj:
+            found = _find_map_id(item)
+            if found is not None:
+                return found
+    return None
+
+
 class IrrisenseApi:
     """REST + MQTT client for the Aiper Irrisense 2."""
 
@@ -661,11 +692,27 @@ class IrrisenseApi:
     def get_drainage_reminder(self, sn: str) -> dict | None:
         return self._wr("/wr/getDrainageReminderPopup", {"sn": sn})
 
-    def get_map_pesticide_usage(self, sn: str) -> dict | None:
-        return self._wr("/wr/getMapPesticideUsage", {"sn": sn})
+    def get_map_id(self, sn: str) -> int | None:
+        """Resolve the map-document id from getMapList (needed by
+        getMapPesticideUsage). Separate from the region/zone ids used for
+        watering — this is the id of the whole map document."""
+        return _find_map_id(self.get_map_list(sn))
 
-    def get_skip_history(self, sn: str) -> dict | None:
-        return self._wr("/wr/getWateringTaskSkipRecordHistoryDataV2", {"sn": sn})
+    def get_map_pesticide_usage(self, sn: str, map_id: int) -> dict | None:
+        return self._wr("/wr/getMapPesticideUsage", {"sn": sn, "mapId": map_id})
+
+    def get_skip_history(self, sn: str, days: int = 30) -> dict | None:
+        # Backend wants a time window in whole seconds (start/end); an empty
+        # body returns code=6002. Default to the last `days` days.
+        now_s = int(time.time())
+        return self._wr(
+            "/wr/getWateringTaskSkipRecordHistoryDataV2",
+            {
+                "sn": sn,
+                "startTimestampSecond": now_s - days * 24 * 3600,
+                "endTimestampSecond": now_s,
+            },
+        )
 
     @staticmethod
     def _parse_regions(zmap: dict | None) -> list[dict[str, Any]]:
