@@ -60,6 +60,11 @@ SIGNAL_MAP_UPDATED = f"{DOMAIN}_map_updated"
 # re-render its options + label in lockstep.
 SIGNAL_SELECTION_CHANGED = f"{DOMAIN}_selection_changed"
 
+# When a zone-map fetch fails (S3 unreachable / transient DNS hiccup) we retry
+# after this many seconds instead of waiting the full `map_refresh_hours`
+# window, so an empty watering-zone select recovers in minutes, not hours.
+MAP_RETRY_BACKOFF_SECONDS = 300
+
 _LOGGER = logging.getLogger(__name__)
 
 _SETTINGS_REFRESH_SECONDS = 30 * 60  # 30 min
@@ -295,7 +300,14 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                 if new_ids != prev_ids:
                     # Zone set changed — let platforms (buttons/numbers) rebuild.
                     async_dispatcher_send(self.hass, SIGNAL_MAP_UPDATED, sn, regions)
-            self._last_map_fetch[sn] = now
+                self._last_map_fetch[sn] = now
+            else:
+                # Fetch failed. Don't advance the timer by the full interval, or
+                # a device that has never loaded a map yet would keep an empty
+                # zone select until the next `map_refresh_hours` window (default
+                # 6 h). Schedule the next attempt after a short backoff instead.
+                retry_in = min(MAP_RETRY_BACKOFF_SECONDS, self._map_refresh)
+                self._last_map_fetch[sn] = now - self._map_refresh + retry_in
 
         # History + stats: every `history_refresh_hours`
         if now - self._last_history_fetch.get(sn, 0) > self._history_refresh:
