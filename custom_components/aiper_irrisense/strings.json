@@ -51,7 +51,7 @@
       "active_progress": {"name": "Progress"},
       "active_repair_layer": {"name": "Coverage passes"},
       "remaining_time": {"name": "Remaining time"},
-      "head_azimuth": {"name": "Head azimuth"},
+      "head_angle": {"name": "Head angle"},
       "firmware": {"name": "Firmware version"},
       "water_today": {"name": "Water usage today"},
       "water_week": {"name": "Water usage this week"},

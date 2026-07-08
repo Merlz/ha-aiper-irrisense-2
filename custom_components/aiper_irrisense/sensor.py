@@ -40,7 +40,7 @@ async def async_setup_entry(
                 ActiveProgressSensor(coordinator, sn),
                 ActiveRepairLayerSensor(coordinator, sn),
                 RemainingTimeSensor(coordinator, sn),
-                HeadAzimuthSensor(coordinator, sn),
+                HeadAngleSensor(coordinator, sn),
                 FirmwareSensor(coordinator, sn),
                 McuFirmwareSensor(coordinator, sn),
                 ValveFirmwareSensor(coordinator, sn),
@@ -322,24 +322,26 @@ class RemainingTimeSensor(_ActiveMetricBase):
         return None
 
 
-class HeadAzimuthSensor(_ActiveMetricBase):
-    """Compass bearing (0..360°) the sprinkler head currently points at.
+class HeadAngleSensor(_ActiveMetricBase):
+    """Rotation angle of the sprinkler head, 0..360°.
 
     The realTimeProgress stream reports the live spray target as Cartesian
-    ``x`` / ``y`` (device-relative, head at the origin) but no explicit head
-    angle. The azimuth is recovered as the bearing of that target,
-    ``(90 − atan2(y, x))`` normalised to 0..360° — the same relation the
+    ``x`` / ``y`` (head at the origin) but no explicit head angle. The angle
+    is recovered as ``(90 − atan2(y, x)) mod 360`` — the same relation the
     static map's ``rotate`` field (centi-degrees) follows, verified across
     ~50 map points on two devices.
+
+    Device-relative: 0° is the device's own +Y reference, **not** a compass
+    bearing — the data carries no geographic-North / real-world orientation.
     """
 
-    _attr_icon = "mdi:compass-outline"
+    _attr_icon = "mdi:angle-acute"
     _attr_native_unit_of_measurement = "°"
-    _attr_translation_key = "head_azimuth"
+    _attr_translation_key = "head_angle"
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
-        super().__init__(coordinator, sn, "head_azimuth")
-        self._attr_name = "Head azimuth"
+        super().__init__(coordinator, sn, "head_angle")
+        self._attr_name = "Head angle"
 
     @property
     def native_value(self) -> float | None:
@@ -352,8 +354,8 @@ class HeadAzimuthSensor(_ActiveMetricBase):
             return None
         if x == 0 and y == 0:
             return None
-        bearing = (90.0 - math.degrees(math.atan2(y, x))) % 360.0
-        return round(bearing, 1)
+        angle = (90.0 - math.degrees(math.atan2(y, x))) % 360.0
+        return round(angle, 1)
 
 
 # --------------------------------------------------------------------------- #
