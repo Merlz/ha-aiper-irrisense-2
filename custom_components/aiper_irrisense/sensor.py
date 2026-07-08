@@ -8,6 +8,7 @@ Field names are confirmed from a live diagnostics dump:
 """
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 from typing import Any
 
@@ -38,6 +39,8 @@ async def async_setup_entry(
                 ActiveTotalSensor(coordinator, sn),
                 ActiveProgressSensor(coordinator, sn),
                 ActiveRepairLayerSensor(coordinator, sn),
+                RemainingTimeSensor(coordinator, sn),
+                HeadAzimuthSensor(coordinator, sn),
                 FirmwareSensor(coordinator, sn),
                 McuFirmwareSensor(coordinator, sn),
                 ValveFirmwareSensor(coordinator, sn),
@@ -46,6 +49,7 @@ async def async_setup_entry(
                 TotalWaterSavingSensor(coordinator, sn),
                 TotalWateringEventsSensor(coordinator, sn),
                 LastWateringZoneSensor(coordinator, sn),
+                LastRunWaterSensor(coordinator, sn),
             ]
         )
     async_add_entities(entities)
@@ -283,6 +287,75 @@ class ActiveRepairLayerSensor(_ActiveMetricBase):
         return None
 
 
+class RemainingTimeSensor(_ActiveMetricBase):
+    """Estimated seconds until the current run finishes (``total − elapsed``).
+
+    Reported only once the coordinator has back-solved a real run duration
+    (``duration_pending`` cleared). While the duration is still the 300s
+    placeholder we return None, so a dashboard shows "--:--" instead of
+    counting down a fake five minutes.
+    """
+
+    _attr_icon = "mdi:timer-sand-complete"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "s"
+    _attr_translation_key = "remaining_time"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "remaining_time")
+        self._attr_name = "Remaining time"
+
+    @property
+    def native_value(self) -> int | None:
+        live = self._live()
+        if not live or live.get("duration_pending"):
+            return None
+        total = live.get("duration_seconds")
+        elapsed = live.get("time_sec")
+        if (
+            isinstance(total, (int, float))
+            and isinstance(elapsed, (int, float))
+            and total > 0
+        ):
+            return int(max(0, total - elapsed))
+        return None
+
+
+class HeadAzimuthSensor(_ActiveMetricBase):
+    """Compass bearing (0..360°) the sprinkler head currently points at.
+
+    The realTimeProgress stream reports the live spray target as Cartesian
+    ``x`` / ``y`` (device-relative, head at the origin) but no explicit head
+    angle. The azimuth is recovered as the bearing of that target,
+    ``(90 − atan2(y, x))`` normalised to 0..360° — the same relation the
+    static map's ``rotate`` field (centi-degrees) follows, verified across
+    ~50 map points on two devices.
+    """
+
+    _attr_icon = "mdi:compass-outline"
+    _attr_native_unit_of_measurement = "°"
+    _attr_translation_key = "head_azimuth"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "head_azimuth")
+        self._attr_name = "Head azimuth"
+
+    @property
+    def native_value(self) -> float | None:
+        live = self._live()
+        if not live:
+            return None
+        x = live.get("x")
+        y = live.get("y")
+        if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+            return None
+        if x == 0 and y == 0:
+            return None
+        bearing = (90.0 - math.degrees(math.atan2(y, x))) % 360.0
+        return round(bearing, 1)
+
+
 # --------------------------------------------------------------------------- #
 # Firmware sensors
 # --------------------------------------------------------------------------- #
@@ -481,4 +554,39 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
                 "duration_minutes": last.get("duration") or last.get("estimatedDuration"),
                 "depth_mm": last.get("depth") or last.get("waterYield"),
             }
+        return None
+
+
+class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
+    """Water delivered during the most recent completed run.
+
+    Read from the newest watering-history record (``usedVolume``). Unlike the
+    lifetime total this is per-run, so it can drive per-run notifications or a
+    comparison against a physical water meter. The unit follows the lifetime
+    totals' convention (backend reports gallons; HA converts for metric users).
+    """
+
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
+    _attr_icon = "mdi:water-sync"
+    _attr_translation_key = "last_run_water"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_run_water")
+        self._attr_name = "Last run water"
+
+    @property
+    def native_value(self) -> float | None:
+        history = self._slot.get("history")
+        if not isinstance(history, dict):
+            return None
+        items = history.get("list") or history.get("records") or history.get("data") or []
+        if not (isinstance(items, list) and items and isinstance(items[0], dict)):
+            return None
+        val = items[0].get("usedVolume")
+        if val is None:
+            val = items[0].get("used_volume")
+        if isinstance(val, (int, float)):
+            return float(val)
         return None
