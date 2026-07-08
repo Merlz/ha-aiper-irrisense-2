@@ -50,11 +50,14 @@
       "active_total": {"name": "Run total seconds"},
       "active_progress": {"name": "Progress"},
       "active_repair_layer": {"name": "Coverage passes"},
+      "remaining_time": {"name": "Remaining time"},
+      "head_azimuth": {"name": "Head azimuth"},
       "firmware": {"name": "Firmware version"},
       "water_today": {"name": "Water usage today"},
       "water_week": {"name": "Water usage this week"},
       "water_month": {"name": "Water usage this month"},
-      "last_zone": {"name": "Last watered zone"}
+      "last_zone": {"name": "Last watered zone"},
+      "last_run_water": {"name": "Last run water"}
     },
     "binary_sensor": {
       "online": {"name": "Online"},
