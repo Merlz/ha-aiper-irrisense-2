@@ -59,5 +59,21 @@ class IrrisenseEntity(CoordinatorEntity[IrrisenseCoordinator]):
         return m if isinstance(m, dict) else {}
 
     @property
+    def _latest_history_record(self) -> dict[str, Any] | None:
+        """Most recent watering-history record, or None.
+
+        The backend returns the record list under a version-dependent key
+        (``list`` / ``records`` / ``data``); this centralises the lookup the
+        history-backed sensors share.
+        """
+        history = self._slot.get("history")
+        if not isinstance(history, dict):
+            return None
+        items = history.get("list") or history.get("records") or history.get("data") or []
+        if isinstance(items, list) and items and isinstance(items[0], dict):
+            return items[0]
+        return None
+
+    @property
     def available(self) -> bool:
         return bool(self.coordinator.last_update_success)

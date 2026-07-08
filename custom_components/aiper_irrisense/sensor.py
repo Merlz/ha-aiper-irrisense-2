@@ -521,18 +521,9 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        history = self._slot.get("history")
-        if not isinstance(history, dict):
+        last = self._latest_history_record
+        if last is None:
             return None
-        items = (
-            history.get("list")
-            or history.get("records")
-            or history.get("data")
-            or []
-        )
-        if not (isinstance(items, list) and items and isinstance(items[0], dict)):
-            return None
-        last = items[0]
         region_id = last.get("regionId") or last.get("region_id") or last.get("mapId")
         if region_id is not None:
             try:
@@ -545,18 +536,14 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
-        history = self._slot.get("history")
-        if not isinstance(history, dict):
+        last = self._latest_history_record
+        if last is None:
             return None
-        items = history.get("list") or history.get("records") or history.get("data") or []
-        if isinstance(items, list) and items and isinstance(items[0], dict):
-            last = items[0]
-            return {
-                "start_time": last.get("startTime") or last.get("start_time"),
-                "duration_minutes": last.get("duration") or last.get("estimatedDuration"),
-                "depth_mm": last.get("depth") or last.get("waterYield"),
-            }
-        return None
+        return {
+            "start_time": last.get("startTime") or last.get("start_time"),
+            "duration_minutes": last.get("duration") or last.get("estimatedDuration"),
+            "depth_mm": last.get("depth") or last.get("waterYield"),
+        }
 
 
 class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
@@ -580,15 +567,12 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        history = self._slot.get("history")
-        if not isinstance(history, dict):
+        last = self._latest_history_record
+        if last is None:
             return None
-        items = history.get("list") or history.get("records") or history.get("data") or []
-        if not (isinstance(items, list) and items and isinstance(items[0], dict)):
-            return None
-        val = items[0].get("usedVolume")
+        val = last.get("usedVolume")
         if val is None:
-            val = items[0].get("used_volume")
+            val = last.get("used_volume")
         if isinstance(val, (int, float)):
             return float(val)
         return None
