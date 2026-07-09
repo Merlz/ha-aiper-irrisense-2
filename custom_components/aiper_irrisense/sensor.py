@@ -555,8 +555,9 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
     totals' convention (backend reports gallons; HA converts for metric users).
     """
 
+    # No state_class: per-run snapshot, not a measurement stream — HA rejects
+    # `measurement` on device_class `water` (expects total/total_increasing).
     _attr_device_class = SensorDeviceClass.WATER
-    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
     _attr_icon = "mdi:water-sync"
     _attr_translation_key = "last_run_water"
