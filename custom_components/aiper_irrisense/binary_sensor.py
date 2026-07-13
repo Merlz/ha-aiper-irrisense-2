@@ -29,6 +29,7 @@ async def async_setup_entry(
                 OnlineBinarySensor(coordinator, sn),
                 WateringBinarySensor(coordinator, sn),
                 RainSensingBinarySensor(coordinator, sn),
+                LastRunFaultBinarySensor(coordinator, sn),
             ]
         )
     async_add_entities(entities)
@@ -96,3 +97,31 @@ class RainSensingBinarySensor(IrrisenseEntity, BinarySensorEntity):
         rain = setting.get("rainSensing")
         weather = setting.get("weatherSensingRain")
         return bool(rain) and bool(weather)
+
+
+# taskStatus == 2 is the app's ``fault`` outcome (device malfunction), distinct
+# from the normal non-completion reasons (manual stop, weather skip, …).
+_TASK_STATUS_FAULT = 2
+
+
+class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
+    """On when the most recent run ended in a device fault (``taskStatus == 2``).
+
+    Lets an automation react to a failed run (e.g. a run that aborted with no
+    water delivered) without templating the ``last_run_status`` sensor.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_icon = "mdi:sprinkler-variant-alert"
+    _attr_translation_key = "last_run_fault"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_run_fault")
+        self._attr_name = "Last run fault"
+
+    @property
+    def is_on(self) -> bool | None:
+        last = self._latest_history_record
+        if last is None:
+            return None
+        return last.get("taskStatus") == _TASK_STATUS_FAULT

@@ -57,11 +57,28 @@
       "water_week": {"name": "Water usage this week"},
       "water_month": {"name": "Water usage this month"},
       "last_zone": {"name": "Last watered zone"},
-      "last_run_water": {"name": "Last run water"}
+      "last_run_water": {"name": "Last run water"},
+      "last_run_status": {
+        "name": "Last run status",
+        "state": {
+          "completed": "Completed",
+          "fault": "Fault",
+          "weather_wind": "Skipped – wind",
+          "weather_rain": "Skipped – rain forecast",
+          "on_rain": "Skipped – raining",
+          "overlap": "Skipped – overlap",
+          "manual_stop": "Stopped manually",
+          "water_shortage": "Stopped – no water",
+          "manual_task": "Skipped – manual task",
+          "conflict": "Skipped – conflict",
+          "un_completed": "Incomplete"
+        }
+      }
     },
     "binary_sensor": {
       "online": {"name": "Online"},
-      "watering": {"name": "Watering"}
+      "watering": {"name": "Watering"},
+      "last_run_fault": {"name": "Last run fault"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},

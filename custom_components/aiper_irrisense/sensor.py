@@ -50,6 +50,7 @@ async def async_setup_entry(
                 TotalWateringEventsSensor(coordinator, sn),
                 LastWateringZoneSensor(coordinator, sn),
                 LastRunWaterSensor(coordinator, sn),
+                LastRunStatusSensor(coordinator, sn),
             ]
         )
     async_add_entities(entities)
@@ -579,3 +580,48 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
         if isinstance(val, (int, float)):
             return float(val)
         return None
+
+
+# Outcome of a finished run, as coded on the watering-history record's
+# ``taskStatus`` field. Anything outside this table renders as ``un_completed``.
+TASK_STATUS_LABELS: dict[int, str] = {
+    1: "completed",
+    2: "fault",
+    3: "weather_wind",
+    4: "weather_rain",
+    5: "on_rain",
+    6: "overlap",
+    7: "manual_stop",
+    8: "water_shortage",
+    9: "manual_task",
+    10: "conflict",
+}
+_TASK_STATUS_FALLBACK = "un_completed"
+
+
+class LastRunStatusSensor(IrrisenseEntity, SensorEntity):
+    """Outcome label of the most recent watering-history record (``taskStatus``).
+
+    Surfaces why the last run ended — ``completed``, ``manual_stop``, a
+    weather skip, or ``fault`` — so the reason is available to automations
+    without polling the app.
+    """
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(TASK_STATUS_LABELS.values()) + [_TASK_STATUS_FALLBACK]
+    _attr_icon = "mdi:clipboard-check-outline"
+    _attr_translation_key = "last_run_status"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_run_status")
+        self._attr_name = "Last run status"
+
+    @property
+    def native_value(self) -> str | None:
+        last = self._latest_history_record
+        if last is None:
+            return None
+        val = last.get("taskStatus")
+        if not isinstance(val, int) or isinstance(val, bool):
+            return None
+        return TASK_STATUS_LABELS.get(val, _TASK_STATUS_FALLBACK)
