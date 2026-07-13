@@ -549,10 +549,14 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
 class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
     """Water delivered during the most recent completed run.
 
-    Read from the newest watering-history record (``usedVolume``). Unlike the
+    Read from the newest watering-history record (``newWaterYield``). Unlike the
     lifetime total this is per-run, so it can drive per-run notifications or a
     comparison against a physical water meter. The unit follows the lifetime
     totals' convention (backend reports gallons; HA converts for metric users).
+
+    ``newWaterYield`` is the water the app itself shows per run; the sibling
+    ``usedVolume`` field is the potion/pesticide amount, not water, and reads 0
+    without a cartridge.
     """
 
     # No state_class: per-run snapshot, not a measurement stream — HA rejects
@@ -571,9 +575,7 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
         last = self._latest_history_record
         if last is None:
             return None
-        val = last.get("usedVolume")
-        if val is None:
-            val = last.get("used_volume")
+        val = last.get("newWaterYield")
         if isinstance(val, (int, float)):
             return float(val)
         return None
