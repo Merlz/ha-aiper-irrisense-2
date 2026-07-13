@@ -99,16 +99,20 @@ class RainSensingBinarySensor(IrrisenseEntity, BinarySensorEntity):
         return bool(rain) and bool(weather)
 
 
-# taskStatus == 2 is the app's ``fault`` outcome (device malfunction), distinct
-# from the normal non-completion reasons (manual stop, weather skip, …).
-_TASK_STATUS_FAULT = 2
+# The two taskStatus outcomes that mean the device could not do its job:
+# ``2`` (fault / malfunction) and ``8`` (water shortage — no/insufficient
+# supply). The remaining non-completion codes (manual stop, weather skips,
+# task overlap, conflicts) are normal operation, not problems.
+_TASK_STATUS_PROBLEM = (2, 8)
 
 
 class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
-    """On when the most recent run ended in a device fault (``taskStatus == 2``).
+    """On when the most recent run ended in a device problem.
 
-    Lets an automation react to a failed run (e.g. a run that aborted with no
-    water delivered) without templating the ``last_run_status`` sensor.
+    Fires on ``taskStatus`` fault (2) or water shortage (8) — e.g. a run that
+    aborted with no water delivered — so an automation can react without
+    templating the ``last_run_status`` sensor. Normal non-completions (manual
+    stop, weather skips) do not trip it.
     """
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
@@ -124,4 +128,4 @@ class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
         last = self._latest_history_record
         if last is None:
             return None
-        return last.get("taskStatus") == _TASK_STATUS_FAULT
+        return last.get("taskStatus") in _TASK_STATUS_PROBLEM
