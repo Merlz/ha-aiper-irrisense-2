@@ -58,6 +58,8 @@
       "water_month": {"name": "Water usage this month"},
       "last_zone": {"name": "Last watered zone"},
       "last_run_water": {"name": "Last run water"},
+      "last_run_saving": {"name": "Last run water saved"},
+      "last_run_duration": {"name": "Last run duration"},
       "last_run_status": {
         "name": "Last run status",
         "state": {

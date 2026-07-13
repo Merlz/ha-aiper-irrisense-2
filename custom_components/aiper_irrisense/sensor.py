@@ -50,6 +50,8 @@ async def async_setup_entry(
                 TotalWateringEventsSensor(coordinator, sn),
                 LastWateringZoneSensor(coordinator, sn),
                 LastRunWaterSensor(coordinator, sn),
+                LastRunSavingSensor(coordinator, sn),
+                LastRunDurationSensor(coordinator, sn),
                 LastRunStatusSensor(coordinator, sn),
             ]
         )
@@ -597,6 +599,63 @@ TASK_STATUS_LABELS: dict[int, str] = {
     10: "conflict",
 }
 _TASK_STATUS_FALLBACK = "un_completed"
+
+
+class LastRunSavingSensor(IrrisenseEntity, SensorEntity):
+    """Water saved during the most recent run (``waterSavingAmount``).
+
+    Per-run counterpart to the lifetime ``total_water_saving`` total, read from
+    the newest history record. Same unit convention as the other water totals
+    (backend reports gallons; HA converts for metric users).
+    """
+
+    _attr_device_class = SensorDeviceClass.WATER
+    _attr_native_unit_of_measurement = UnitOfVolume.GALLONS
+    _attr_icon = "mdi:water-check"
+    _attr_translation_key = "last_run_saving"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_run_saving")
+        self._attr_name = "Last run water saved"
+
+    @property
+    def native_value(self) -> float | None:
+        last = self._latest_history_record
+        if last is None:
+            return None
+        val = last.get("waterSavingAmount")
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            return float(val)
+        return None
+
+
+class LastRunDurationSensor(IrrisenseEntity, SensorEntity):
+    """Actual run time of the most recent run (``runTime``, minutes).
+
+    Verified against the record's planned ``duration`` on point zones: a
+    10-minute dose reports ``runTime`` 11, a 1-minute dose reports 2 — i.e.
+    the planned minutes plus ~1 of overhead. Line zones carry no planned
+    ``duration`` but the same ``runTime`` (minutes) still applies.
+    """
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = "min"
+    _attr_icon = "mdi:timer-outline"
+    _attr_translation_key = "last_run_duration"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "last_run_duration")
+        self._attr_name = "Last run duration"
+
+    @property
+    def native_value(self) -> int | None:
+        last = self._latest_history_record
+        if last is None:
+            return None
+        val = last.get("runTime")
+        if isinstance(val, (int, float)) and not isinstance(val, bool):
+            return int(val)
+        return None
 
 
 class LastRunStatusSensor(IrrisenseEntity, SensorEntity):
