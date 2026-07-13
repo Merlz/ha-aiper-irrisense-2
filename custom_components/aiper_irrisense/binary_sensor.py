@@ -27,6 +27,7 @@ async def async_setup_entry(
         entities.extend(
             [
                 OnlineBinarySensor(coordinator, sn),
+                MqttConnectedBinarySensor(coordinator, sn),
                 WateringBinarySensor(coordinator, sn),
                 RainSensingBinarySensor(coordinator, sn),
             ]
@@ -96,3 +97,28 @@ class RainSensingBinarySensor(IrrisenseEntity, BinarySensorEntity):
         rain = setting.get("rainSensing")
         weather = setting.get("weatherSensingRain")
         return bool(rain) and bool(weather)
+
+
+class MqttConnectedBinarySensor(IrrisenseEntity, BinarySensorEntity):
+    """Whether the integration's AWS IoT MQTT link is up.
+
+    Distinct from `online` / `session_conflict`, which reflect the REST/cloud
+    layer. Commands (setWorkMode, plan queries) ride MQTT, so this shows when
+    they can actually be delivered. AWS IoT allows one connection per Cognito
+    identity (last connect wins), so opening the iOS Aiper app evicts this
+    link until auto-recovery reconnects.
+
+    Reflects the client's connected belief: it can briefly read "on" during a
+    half-dead state where the socket is up but publishes time out.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_name = "MQTT connected"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "mqtt_connected")
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.api.is_mqtt_connected()
