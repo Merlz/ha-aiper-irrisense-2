@@ -151,7 +151,6 @@ class CurrentDoseSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "current_dose")
-        self._attr_name = "Current dose"
 
     @property
     def native_value(self) -> str | None:

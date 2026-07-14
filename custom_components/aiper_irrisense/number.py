@@ -90,7 +90,6 @@ class DepthNumber(_DoseNumberBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "watering_depth")
-        self._attr_name = "Watering depth"
 
     def _label_for(self, value: float) -> str:
         return f"{int(round(value))} mm"
@@ -107,7 +106,6 @@ class DurationNumber(_DoseNumberBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "watering_duration")
-        self._attr_name = "Watering duration"
 
     def _label_for(self, value: float) -> str:
         return f"{int(round(value))} min"
