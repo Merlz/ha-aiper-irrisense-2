@@ -29,6 +29,7 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.SELECT,
+    Platform.NUMBER,
     Platform.BUTTON,
 ]
 # Dose lives on the Watering Dose select (label-valued: "3 mm" / "5 min" / ...)

@@ -44,7 +44,11 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     POINT_TIME_LOW,
+    POINT_TIME_MAX,
+    POINT_TIME_MIN,
     POINT_TIME_PRESETS,
+    WATER_YIELD_MAX,
+    WATER_YIELD_MIN,
     REGION_TYPE_POINT,
     WATER_YIELD_LOW,
     WATER_YIELD_PRESETS,
@@ -476,15 +480,14 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         if resolved_type == REGION_TYPE_POINT:
             if point_time is None:
                 point_time = int(region.get("pointTime", POINT_TIME_LOW)) if region else POINT_TIME_LOW
-            kwargs["point_time"] = _snap_to_preset(
-                int(point_time), POINT_TIME_PRESETS, "point_time (minutes)",
-            )
+            # Free value: the device accepts the full 1..150 min range, not
+            # just the presets. Clamp to the device bounds instead of snapping.
+            kwargs["point_time"] = max(POINT_TIME_MIN, min(POINT_TIME_MAX, int(point_time)))
         else:
             if water_yield is None:
                 water_yield = float(region.get("waterYield", WATER_YIELD_LOW)) if region else WATER_YIELD_LOW
-            kwargs["water_yield"] = _snap_to_preset(
-                float(water_yield), WATER_YIELD_PRESETS, "waterYield",
-            )
+            # Free value: the device accepts 0.1..0.9 in; clamp, do not snap.
+            kwargs["water_yield"] = max(WATER_YIELD_MIN, min(WATER_YIELD_MAX, float(water_yield)))
 
         _LOGGER.debug(
             "async_start_zone resolved sn=%s map_id=%s region=%s → kwargs=%s",

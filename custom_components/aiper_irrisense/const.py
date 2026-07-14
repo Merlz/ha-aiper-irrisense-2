@@ -1,6 +1,8 @@
 """Constants for the Aiper Irrisense 2 integration."""
 from __future__ import annotations
 
+import re
+
 from typing import Final
 
 DOMAIN: Final = "aiper_irrisense"
@@ -92,6 +94,16 @@ POINT_TIME_MEDIUM: Final = 5
 POINT_TIME_HIGH: Final = 10
 POINT_TIME_PRESETS: Final = (POINT_TIME_LOW, POINT_TIME_MEDIUM, POINT_TIME_HIGH)
 
+# Free dose bounds — the device accepts the full slider range, not just the
+# three presets (2026-07). Depth: 0.1..0.9 in on the wire, shown mm x25.4
+# (3..23 mm; 1.0 in / 25 mm is NOT selectable). Point time: 1..150 minutes.
+WATER_YIELD_MIN: Final = 0.1
+WATER_YIELD_MAX: Final = 0.9
+DEPTH_MM_MIN: Final = 3
+DEPTH_MM_MAX: Final = 23
+POINT_TIME_MIN: Final = 1
+POINT_TIME_MAX: Final = 150
+
 # ---- Dose / Duration labels (shown in the HA Select) ----------------------
 # The Aiper app displays the three waterYield presets as "3 mm / 6 mm / 13 mm"
 # and the three point_time presets as "1 min / 5 min / 10 min". We keep the
@@ -144,6 +156,7 @@ def parse_dose_label(label: str) -> tuple[str, float | int] | None:
     Returns a tuple ``(kind, value)`` where ``kind`` is ``"waterYield"`` for
     Area/Line presets and ``"point_time"`` for Point presets. Returns None
     on unknown labels so callers can fall back to the zone-map default.
+    Preset labels win; free "N mm" / "N min" values are parsed too.
     """
     for wy, lbl in WATER_YIELD_LABELS.items():
         if lbl == label:
@@ -151,6 +164,16 @@ def parse_dose_label(label: str) -> tuple[str, float | int] | None:
     for pt, lbl in POINT_TIME_LABELS.items():
         if lbl == label:
             return ("point_time", pt)
+    # Free (non-preset) values from the Number entities: "18 mm" / "120 min".
+    # Depth is shown in mm but sent as the inch float (1 in = 25.4 mm); the
+    # device accepts the full 0.1..0.9 in / 1..150 min range, not just the
+    # three presets above.
+    m = re.fullmatch(r"(\d+(?:\.\d+)?) mm", label)
+    if m:
+        return ("waterYield", float(m.group(1)) / 25.4)
+    m = re.fullmatch(r"(\d+) min", label)
+    if m:
+        return ("point_time", int(m.group(1)))
     return None
 
 

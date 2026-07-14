@@ -34,6 +34,7 @@ async def async_setup_entry(
         entities.extend(
             [
                 ActiveZoneSensor(coordinator, sn),
+                CurrentDoseSensor(coordinator, sn),
                 ActiveElapsedSensor(coordinator, sn),
                 ActiveTotalSensor(coordinator, sn),
                 ActiveProgressSensor(coordinator, sn),
@@ -136,6 +137,25 @@ class ActiveZoneSensor(IrrisenseEntity, SensorEntity):
             # rather than tick down a fake 5 minutes.
             "duration_pending": state.get("duration_pending", False),
         }
+
+
+class CurrentDoseSensor(IrrisenseEntity, SensorEntity):
+    """The dose / duration the next Start will use.
+
+    Mirrors the shared dose selection last written by the Dose select or the
+    depth / duration Number entities, as a label like "13 mm" or "120 min".
+    """
+
+    _attr_icon = "mdi:water-percent"
+    _attr_translation_key = "current_dose"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "current_dose")
+        self._attr_name = "Current dose"
+
+    @property
+    def native_value(self) -> str | None:
+        return self.coordinator.get_dose_selection(self._sn)
 
 
 # --------------------------------------------------------------------------- #

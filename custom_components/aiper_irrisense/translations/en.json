@@ -46,6 +46,7 @@
   "entity": {
     "sensor": {
       "active_zone": {"name": "Active zone"},
+      "current_dose": {"name": "Current dose"},
       "active_elapsed": {"name": "Elapsed seconds"},
       "active_total": {"name": "Run total seconds"},
       "active_progress": {"name": "Progress"},
@@ -59,6 +60,10 @@
     "binary_sensor": {
       "online": {"name": "Online"},
       "watering": {"name": "Watering"}
+    },
+    "number": {
+      "watering_depth": {"name": "Watering depth"},
+      "watering_duration": {"name": "Watering duration"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},
