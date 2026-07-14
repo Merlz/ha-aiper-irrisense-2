@@ -1,0 +1,113 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Inicie sessão com a sua conta Aiper. Apenas serão adicionados dispositivos IrriSense (prefixo de número de série WR / WG / WC / WL).",
+        "data": {
+          "username": "Endereço de e-mail",
+          "password": "Palavra-passe",
+          "region": "Região"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticar Aiper Irrisense",
+        "description": "As credenciais guardadas já não são válidas. Introduza novamente a sua palavra-passe.",
+        "data": {
+          "password": "Palavra-passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credenciais inválidas.",
+      "cannot_connect": "Falha ao ligar à cloud Aiper.",
+      "no_devices": "Não foram encontrados dispositivos IrriSense (WR / WG / WC / WL) nesta conta.",
+      "unknown": "Erro inesperado."
+    },
+    "abort": {
+      "already_configured": "Esta conta já está configurada."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções Aiper Irrisense",
+        "data": {
+          "enable_mqtt": "Ativar MQTT (atualizações em tempo real)",
+          "mqtt_debug": "Registar todas as mensagens MQTT (apenas depuração)",
+          "poll_interval": "Intervalo de consulta (segundos)",
+          "map_refresh_hours": "Intervalo de atualização do mapa de zonas (horas)",
+          "history_refresh_hours": "Atualização de histórico / estatísticas (horas)",
+          "reminder_refresh_hours": "Atualização de bico / lembrete (horas)",
+          "weather_refresh_hours": "Atualização meteorológica (horas)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_zone": {"name": "Zona ativa"},
+      "active_elapsed": {"name": "Segundos decorridos"},
+      "active_total": {"name": "Duração total do ciclo (segundos)"},
+      "active_progress": {"name": "Progresso"},
+      "active_repair_layer": {"name": "Passagens de cobertura"},
+      "remaining_time": {"name": "Tempo restante"},
+      "head_angle": {"name": "Ângulo da cabeça"},
+      "spray_distance": {"name": "Alcance do jato"},
+      "firmware": {"name": "Versão de firmware"},
+      "water_today": {"name": "Consumo de água hoje"},
+      "water_week": {"name": "Consumo de água esta semana"},
+      "water_month": {"name": "Consumo de água este mês"},
+      "last_zone": {"name": "Última zona regada"},
+      "last_run_water": {"name": "Água do último ciclo"},
+      "last_run_saving": {"name": "Água poupada no último ciclo"},
+      "last_run_duration": {"name": "Duração do último ciclo"},
+      "last_run_status": {
+        "name": "Estado do último ciclo",
+        "state": {
+          "completed": "Concluído",
+          "fault": "Falha",
+          "weather_wind": "Ignorado – vento",
+          "weather_rain": "Ignorado – previsão de chuva",
+          "on_rain": "Ignorado – chuva",
+          "overlap": "Ignorado – sobreposição",
+          "manual_stop": "Parado manualmente",
+          "water_shortage": "Parado – sem água",
+          "manual_task": "Ignorado – tarefa manual",
+          "conflict": "Ignorado – conflito",
+          "un_completed": "Incompleto"
+        }
+      }
+    },
+    "binary_sensor": {
+      "online": {"name": "Online"},
+      "watering": {"name": "Rega"},
+      "session_conflict": {"name": "Conflito de sessão"},
+      "last_run_fault": {"name": "Falha do último ciclo"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Tipo de bico"},
+      "watering_zone": {"name": "Zona de rega"},
+      "watering_dose": {"name": "Dose"},
+      "watering_duration": {"name": "Duração"}
+    },
+    "button": {
+      "start_watering": {"name": "Iniciar rega"},
+      "stop_watering": {"name": "Parar rega"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Iniciar zona",
+      "description": "Iniciar a rega de uma zona específica."
+    },
+    "stop_zone": {
+      "name": "Parar zona",
+      "description": "Parar a rega de uma zona específica."
+    },
+    "query_work_info": {
+      "name": "Consultar informação de trabalho",
+      "description": "Pedir ao dispositivo para publicar imediatamente o seu instantâneo de trabalho atual."
+    }
+  }
+}

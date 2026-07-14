@@ -1,0 +1,113 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Connectez-vous avec votre compte Aiper. Seuls les appareils IrriSense (préfixe de numéro de série WR / WG / WC / WL) seront ajoutés.",
+        "data": {
+          "username": "Adresse e-mail",
+          "password": "Mot de passe",
+          "region": "Région"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ré-authentifier Aiper Irrisense",
+        "description": "Les identifiants enregistrés ne sont plus valides. Veuillez saisir à nouveau votre mot de passe.",
+        "data": {
+          "password": "Mot de passe"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Identifiants invalides.",
+      "cannot_connect": "Échec de la connexion au cloud Aiper.",
+      "no_devices": "Aucun appareil IrriSense (WR / WG / WC / WL) n'a été trouvé sur ce compte.",
+      "unknown": "Erreur inattendue."
+    },
+    "abort": {
+      "already_configured": "Ce compte est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Aiper Irrisense",
+        "data": {
+          "enable_mqtt": "Activer MQTT (mises à jour en temps réel)",
+          "mqtt_debug": "Journaliser tous les messages MQTT (débogage uniquement)",
+          "poll_interval": "Intervalle d'interrogation (secondes)",
+          "map_refresh_hours": "Intervalle d'actualisation de la carte des zones (heures)",
+          "history_refresh_hours": "Actualisation de l'historique / des statistiques (heures)",
+          "reminder_refresh_hours": "Actualisation buse / rappel (heures)",
+          "weather_refresh_hours": "Actualisation météo (heures)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_zone": {"name": "Zone active"},
+      "active_elapsed": {"name": "Secondes écoulées"},
+      "active_total": {"name": "Durée totale du cycle (secondes)"},
+      "active_progress": {"name": "Progression"},
+      "active_repair_layer": {"name": "Passages de couverture"},
+      "remaining_time": {"name": "Temps restant"},
+      "head_angle": {"name": "Angle de la tête"},
+      "spray_distance": {"name": "Portée du jet"},
+      "firmware": {"name": "Version du micrologiciel"},
+      "water_today": {"name": "Consommation d'eau aujourd'hui"},
+      "water_week": {"name": "Consommation d'eau cette semaine"},
+      "water_month": {"name": "Consommation d'eau ce mois-ci"},
+      "last_zone": {"name": "Dernière zone arrosée"},
+      "last_run_water": {"name": "Eau du dernier cycle"},
+      "last_run_saving": {"name": "Eau économisée au dernier cycle"},
+      "last_run_duration": {"name": "Durée du dernier cycle"},
+      "last_run_status": {
+        "name": "Statut du dernier cycle",
+        "state": {
+          "completed": "Terminé",
+          "fault": "Défaut",
+          "weather_wind": "Ignoré – vent",
+          "weather_rain": "Ignoré – prévision de pluie",
+          "on_rain": "Ignoré – pluie",
+          "overlap": "Ignoré – chevauchement",
+          "manual_stop": "Arrêté manuellement",
+          "water_shortage": "Arrêté – manque d'eau",
+          "manual_task": "Ignoré – tâche manuelle",
+          "conflict": "Ignoré – conflit",
+          "un_completed": "Incomplet"
+        }
+      }
+    },
+    "binary_sensor": {
+      "online": {"name": "En ligne"},
+      "watering": {"name": "Arrosage"},
+      "session_conflict": {"name": "Conflit de session"},
+      "last_run_fault": {"name": "Défaut du dernier cycle"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Type de buse"},
+      "watering_zone": {"name": "Zone d'arrosage"},
+      "watering_dose": {"name": "Dose"},
+      "watering_duration": {"name": "Durée"}
+    },
+    "button": {
+      "start_watering": {"name": "Démarrer l'arrosage"},
+      "stop_watering": {"name": "Arrêter l'arrosage"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Démarrer la zone",
+      "description": "Démarrer l'arrosage d'une zone spécifique."
+    },
+    "stop_zone": {
+      "name": "Arrêter la zone",
+      "description": "Arrêter l'arrosage d'une zone spécifique."
+    },
+    "query_work_info": {
+      "name": "Interroger les infos de fonctionnement",
+      "description": "Demander à l'appareil de publier immédiatement son instantané de fonctionnement actuel."
+    }
+  }
+}

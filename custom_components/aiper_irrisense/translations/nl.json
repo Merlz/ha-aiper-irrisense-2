@@ -1,0 +1,113 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Meld je aan met je Aiper-account. Alleen IrriSense-apparaten (serienummer-prefix WR / WG / WC / WL) worden toegevoegd.",
+        "data": {
+          "username": "E-mailadres",
+          "password": "Wachtwoord",
+          "region": "Regio"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Aiper Irrisense opnieuw verifiëren",
+        "description": "De opgeslagen inloggegevens zijn niet meer geldig. Voer je wachtwoord opnieuw in.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ongeldige inloggegevens.",
+      "cannot_connect": "Kan geen verbinding maken met de Aiper-cloud.",
+      "no_devices": "Er zijn geen IrriSense-apparaten (WR / WG / WC / WL) op dit account gevonden.",
+      "unknown": "Onverwachte fout."
+    },
+    "abort": {
+      "already_configured": "Dit account is al geconfigureerd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aiper Irrisense-opties",
+        "data": {
+          "enable_mqtt": "MQTT inschakelen (realtime updates)",
+          "mqtt_debug": "Alle MQTT-berichten loggen (alleen foutopsporing)",
+          "poll_interval": "Pollinterval (seconden)",
+          "map_refresh_hours": "Vernieuwingsinterval zonekaart (uren)",
+          "history_refresh_hours": "Vernieuwing geschiedenis / statistieken (uren)",
+          "reminder_refresh_hours": "Vernieuwing sproeier / herinnering (uren)",
+          "weather_refresh_hours": "Weervernieuwing (uren)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_zone": {"name": "Actieve zone"},
+      "active_elapsed": {"name": "Verstreken seconden"},
+      "active_total": {"name": "Totale cyclusduur (seconden)"},
+      "active_progress": {"name": "Voortgang"},
+      "active_repair_layer": {"name": "Dekkingspassages"},
+      "remaining_time": {"name": "Resterende tijd"},
+      "head_angle": {"name": "Kophoek"},
+      "spray_distance": {"name": "Sproeiafstand"},
+      "firmware": {"name": "Firmwareversie"},
+      "water_today": {"name": "Waterverbruik vandaag"},
+      "water_week": {"name": "Waterverbruik deze week"},
+      "water_month": {"name": "Waterverbruik deze maand"},
+      "last_zone": {"name": "Laatst besproeide zone"},
+      "last_run_water": {"name": "Water laatste cyclus"},
+      "last_run_saving": {"name": "Bespaard water laatste cyclus"},
+      "last_run_duration": {"name": "Duur laatste cyclus"},
+      "last_run_status": {
+        "name": "Status laatste cyclus",
+        "state": {
+          "completed": "Voltooid",
+          "fault": "Storing",
+          "weather_wind": "Overgeslagen – wind",
+          "weather_rain": "Overgeslagen – regenverwachting",
+          "on_rain": "Overgeslagen – regen",
+          "overlap": "Overgeslagen – overlap",
+          "manual_stop": "Handmatig gestopt",
+          "water_shortage": "Gestopt – geen water",
+          "manual_task": "Overgeslagen – handmatige taak",
+          "conflict": "Overgeslagen – conflict",
+          "un_completed": "Onvolledig"
+        }
+      }
+    },
+    "binary_sensor": {
+      "online": {"name": "Online"},
+      "watering": {"name": "Besproeiing"},
+      "session_conflict": {"name": "Sessieconflict"},
+      "last_run_fault": {"name": "Storing laatste cyclus"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Sproeiertype"},
+      "watering_zone": {"name": "Besproeiingszone"},
+      "watering_dose": {"name": "Dosis"},
+      "watering_duration": {"name": "Duur"}
+    },
+    "button": {
+      "start_watering": {"name": "Besproeiing starten"},
+      "stop_watering": {"name": "Besproeiing stoppen"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Zone starten",
+      "description": "Start de besproeiing van een specifieke zone."
+    },
+    "stop_zone": {
+      "name": "Zone stoppen",
+      "description": "Stop de besproeiing van een specifieke zone."
+    },
+    "query_work_info": {
+      "name": "Werkinfo opvragen",
+      "description": "Vraag het apparaat om onmiddellijk zijn huidige werkstatus te publiceren."
+    }
+  }
+}

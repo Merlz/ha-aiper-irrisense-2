@@ -1,0 +1,113 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Mit Ihrem Aiper-Konto anmelden. Es werden nur IrriSense-Geräte (Seriennummer-Präfix WR / WG / WC / WL) hinzugefügt.",
+        "data": {
+          "username": "E-Mail-Adresse",
+          "password": "Passwort",
+          "region": "Region"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Aiper Irrisense erneut anmelden",
+        "description": "Die gespeicherten Zugangsdaten sind nicht mehr gültig. Bitte geben Sie Ihr Passwort erneut ein.",
+        "data": {
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ungültige Zugangsdaten.",
+      "cannot_connect": "Verbindung zur Aiper-Cloud fehlgeschlagen.",
+      "no_devices": "Auf diesem Konto wurden keine IrriSense-Geräte (WR / WG / WC / WL) gefunden.",
+      "unknown": "Unerwarteter Fehler."
+    },
+    "abort": {
+      "already_configured": "Dieses Konto ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aiper Irrisense Optionen",
+        "data": {
+          "enable_mqtt": "MQTT aktivieren (Echtzeit-Updates)",
+          "mqtt_debug": "Alle MQTT-Nachrichten protokollieren (nur Debug)",
+          "poll_interval": "Abfrageintervall (Sekunden)",
+          "map_refresh_hours": "Aktualisierungsintervall Zonenkarte (Stunden)",
+          "history_refresh_hours": "Aktualisierung Verlauf / Statistik (Stunden)",
+          "reminder_refresh_hours": "Aktualisierung Düse / Erinnerung (Stunden)",
+          "weather_refresh_hours": "Wetter-Aktualisierung (Stunden)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_zone": {"name": "Aktive Zone"},
+      "active_elapsed": {"name": "Vergangene Sekunden"},
+      "active_total": {"name": "Laufdauer gesamt (Sekunden)"},
+      "active_progress": {"name": "Fortschritt"},
+      "active_repair_layer": {"name": "Abdeckungsdurchgänge"},
+      "remaining_time": {"name": "Verbleibende Zeit"},
+      "head_angle": {"name": "Kopfwinkel"},
+      "spray_distance": {"name": "Wurfweite"},
+      "firmware": {"name": "Firmware-Version"},
+      "water_today": {"name": "Wasserverbrauch heute"},
+      "water_week": {"name": "Wasserverbrauch diese Woche"},
+      "water_month": {"name": "Wasserverbrauch diesen Monat"},
+      "last_zone": {"name": "Zuletzt bewässerte Zone"},
+      "last_run_water": {"name": "Wasser letzter Lauf"},
+      "last_run_saving": {"name": "Wasserersparnis letzter Lauf"},
+      "last_run_duration": {"name": "Dauer letzter Lauf"},
+      "last_run_status": {
+        "name": "Status letzter Lauf",
+        "state": {
+          "completed": "Abgeschlossen",
+          "fault": "Störung",
+          "weather_wind": "Übersprungen – Wind",
+          "weather_rain": "Übersprungen – Regenvorhersage",
+          "on_rain": "Übersprungen – Regen",
+          "overlap": "Übersprungen – Überschneidung",
+          "manual_stop": "Manuell gestoppt",
+          "water_shortage": "Gestoppt – kein Wasser",
+          "manual_task": "Übersprungen – manuelle Aufgabe",
+          "conflict": "Übersprungen – Konflikt",
+          "un_completed": "Unvollständig"
+        }
+      }
+    },
+    "binary_sensor": {
+      "online": {"name": "Online"},
+      "watering": {"name": "Bewässerung"},
+      "session_conflict": {"name": "Sitzungskonflikt"},
+      "last_run_fault": {"name": "Störung letzter Lauf"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Düsentyp"},
+      "watering_zone": {"name": "Bewässerungszone"},
+      "watering_dose": {"name": "Dosis"},
+      "watering_duration": {"name": "Dauer"}
+    },
+    "button": {
+      "start_watering": {"name": "Bewässerung starten"},
+      "stop_watering": {"name": "Bewässerung stoppen"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Zone starten",
+      "description": "Bewässerung einer bestimmten Zone starten."
+    },
+    "stop_zone": {
+      "name": "Zone stoppen",
+      "description": "Bewässerung einer bestimmten Zone stoppen."
+    },
+    "query_work_info": {
+      "name": "Arbeitsinfo abfragen",
+      "description": "Das Gerät auffordern, sofort seinen aktuellen Arbeitsstatus zu senden."
+    }
+  }
+}
