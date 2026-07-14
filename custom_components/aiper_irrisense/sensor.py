@@ -14,13 +14,14 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfVolume
+from homeassistant.const import EntityCategory, UnitOfLength, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import IrrisenseCoordinator
 from .entity import IrrisenseEntity
+from .geometry import spray_reach_m
 
 
 async def async_setup_entry(
@@ -41,6 +42,7 @@ async def async_setup_entry(
                 ActiveRepairLayerSensor(coordinator, sn),
                 RemainingTimeSensor(coordinator, sn),
                 HeadAngleSensor(coordinator, sn),
+                SprayDistanceSensor(coordinator, sn),
                 FirmwareSensor(coordinator, sn),
                 McuFirmwareSensor(coordinator, sn),
                 ValveFirmwareSensor(coordinator, sn),
@@ -357,6 +359,34 @@ class HeadAngleSensor(_ActiveMetricBase):
             return None
         angle = (90.0 - math.degrees(math.atan2(y, x))) % 360.0
         return round(angle, 1)
+
+
+class SprayDistanceSensor(_ActiveMetricBase):
+    """Live throw distance of the water, in metres.
+
+    The realTimeProgress stream reports the spray target as Cartesian
+    ``x`` / ``y`` (head at the origin); the reach is the radius
+    ``hypot(x, y)`` scaled to metres. The protocol carries no unit, so the
+    metre value uses an empirical calibration (see ``geometry.py``) and is
+    approximate. None when idle.
+    """
+
+    _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_native_unit_of_measurement = UnitOfLength.METERS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:sprinkler-variant"
+    _attr_translation_key = "spray_distance"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "spray_distance")
+        self._attr_name = "Spray distance"
+
+    @property
+    def native_value(self) -> float | None:
+        live = self._live()
+        if not live:
+            return None
+        return spray_reach_m(live.get("x"), live.get("y"))
 
 
 # --------------------------------------------------------------------------- #
