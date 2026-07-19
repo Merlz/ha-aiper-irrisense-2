@@ -308,9 +308,14 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
             self.update_interval = self._base_interval
 
         try:
-            # Refresh device list on every pass (cheap; once a day would be
-            # enough, but it also catches new devices being added).
-            await self.hass.async_add_executor_job(self.api.get_devices)
+            # Resilience patch: refresh the device list only every ~10 min
+            # instead of every poll, so an intermittent getEquipment 402
+            # doesn't drop all entities (get_devices falls back to its
+            # on-disk cache on 402).
+            _now = time.time()
+            if (_now - getattr(self, "_last_devlist_refresh", 0.0)) > 600:
+                self._last_devlist_refresh = _now
+                await self.hass.async_add_executor_job(self.api.get_devices)
 
             device_registry = dr.async_get(self.hass)
             for dev in self.devices:

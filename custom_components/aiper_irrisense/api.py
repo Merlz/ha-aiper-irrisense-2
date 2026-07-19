@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import logging
 import random
 import threading
@@ -245,6 +246,13 @@ class IrrisenseApi:
         # Device cache
         self._devices: dict[str, dict] = {}
         self._device_zone_id_by_sn: dict[str, str] = {}
+        # --- resilience patch: persist device list so a 402 on
+        #     getEquipment at startup/reload doesn't leave entities
+        #     unavailable; reuse the on-disk list instead. ---
+        self._devices_cache_file = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "aiper_devices_cache.json")
+        self._load_devices_cache()
 
         # MQTT subscription callbacks
         self._shadow_callbacks: dict[str, list[Callable]] = {}
@@ -546,13 +554,35 @@ class IrrisenseApi:
     # Device discovery / shared endpoints
     # ------------------------------------------------------------------ #
 
+    def _load_devices_cache(self) -> None:
+        try:
+            with open(self._devices_cache_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            devs = data.get("devices") or {}
+            if isinstance(devs, dict) and devs:
+                self._devices.update(devs)
+                self._device_zone_id_by_sn.update(data.get("zone_ids") or {})
+                _LOGGER.info("Loaded %d cached Irrisense device(s)", len(devs))
+        except FileNotFoundError:
+            pass
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Could not load device cache: %s", err)
+
+    def _save_devices_cache(self) -> None:
+        try:
+            with open(self._devices_cache_file, "w", encoding="utf-8") as f:
+                json.dump({"devices": self._devices,
+                           "zone_ids": self._device_zone_id_by_sn}, f)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Could not save device cache: %s", err)
+
     def get_devices(self) -> list[dict]:
         """List all devices on the account and filter for Irrisense units."""
         try:
             payload = self._call_encrypted("POST", "/equipment/getEquipment", {})
             if not self._is_success(payload):
-                _LOGGER.warning("get_devices failed: %s", payload.get("code"))
-                return []
+                _LOGGER.warning("get_devices failed: %s — using cached list (%d)", payload.get("code"), len(self._devices))
+                return list(self._devices.values())
 
             devices = payload.get("data", []) or []
             if isinstance(devices, dict):
@@ -572,10 +602,15 @@ class IrrisenseApi:
                 if isinstance(zid, str) and zid:
                     self._device_zone_id_by_sn[sn] = zid
                 out.append(device)
+            if out:
+                self._save_devices_cache()
+                return out
+            if self._devices:
+                return list(self._devices.values())
             return out
         except Exception as err:
-            _LOGGER.error("Failed to get devices: %s", err)
-            return []
+            _LOGGER.error("Failed to get devices: %s — using cached list (%d)", err, len(self._devices))
+            return list(self._devices.values())
 
     def get_equipment_info(self, sn: str) -> dict | None:
         """Shared `/equipment/getEquipmentInfo` — generic device metadata."""
