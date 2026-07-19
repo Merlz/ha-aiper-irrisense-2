@@ -45,6 +45,7 @@
   },
   "entity": {
     "sensor": {
+      "schedules": {"name": "Schedules"},
       "active_zone": {"name": "Active zone"},
       "active_elapsed": {"name": "Elapsed seconds"},
       "active_total": {"name": "Run total seconds"},

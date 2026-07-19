@@ -496,7 +496,7 @@ class SchedulesSensor(IrrisenseEntity, SensorEntity):
     """
 
     _attr_icon = "mdi:calendar-clock"
-    _attr_name = "Schedules"
+    _attr_translation_key = "schedules"
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "schedules")
