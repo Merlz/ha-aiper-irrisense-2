@@ -335,7 +335,6 @@ class RemainingTimeSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "remaining_time")
-        self._attr_name = "Remaining time"
 
     @property
     def native_value(self) -> int | None:
@@ -372,7 +371,6 @@ class HeadAngleSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "head_angle")
-        self._attr_name = "Head angle"
 
     @property
     def native_value(self) -> float | None:
@@ -599,7 +597,6 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_water")
-        self._attr_name = "Last run water"
 
     @property
     def native_value(self) -> float | None:
@@ -644,7 +641,6 @@ class LastRunSavingSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_saving")
-        self._attr_name = "Last run water saved"
 
     @property
     def native_value(self) -> float | None:
@@ -673,7 +669,6 @@ class LastRunDurationSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_duration")
-        self._attr_name = "Last run duration"
 
     @property
     def native_value(self) -> int | None:
@@ -701,7 +696,6 @@ class LastRunStatusSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_status")
-        self._attr_name = "Last run status"
 
     @property
     def native_value(self) -> str | None:

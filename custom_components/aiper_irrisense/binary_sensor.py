@@ -148,7 +148,6 @@ class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_fault")
-        self._attr_name = "Last run fault"
 
     @property
     def is_on(self) -> bool | None:
