@@ -39,6 +39,7 @@
           "map_refresh_hours": "Zone-map refresh interval (hours)",
           "history_refresh_hours": "History / stats refresh (hours)",
           "reminder_refresh_hours": "Nozzle / reminder refresh (hours)",
+          "enable_weather": "Enable weather (sends HA home location to Aiper's cloud)",
           "weather_refresh_hours": "Weather refresh (hours)",
           "enable_experimental_sensors": "Enable experimental sensors (pesticide usage, skip history)"
         }

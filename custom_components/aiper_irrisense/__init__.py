@@ -16,8 +16,10 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from .api import IrrisenseApi
 from .const import (
     CONF_ENABLE_MQTT,
+    CONF_ENABLE_WEATHER,
     CONF_MQTT_DEBUG,
     CONF_REGION,
+    DEFAULT_ENABLE_WEATHER,
     DOMAIN,
 )
 from .coordinator import IrrisenseCoordinator
@@ -30,9 +32,21 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
     Platform.SELECT,
     Platform.BUTTON,
-    Platform.WEATHER,
     Platform.IMAGE,
 ]
+
+
+def _platforms_for(entry: ConfigEntry) -> list[Platform]:
+    """Platforms to set up for this entry.
+
+    Weather is opt-in (it sends HA home coordinates to Aiper's cloud), so the
+    WEATHER platform is only forwarded when the option is enabled. The entry
+    reloads on options change, so setup and unload always see the same set.
+    """
+    platforms = list(PLATFORMS)
+    if entry.options.get(CONF_ENABLE_WEATHER, DEFAULT_ENABLE_WEATHER):
+        platforms.append(Platform.WEATHER)
+    return platforms
 # Dose lives on the Watering Dose select (label-valued: "3 mm" / "5 min" / ...)
 # and backend mapping happens in button.StartWateringButton.
 
@@ -190,7 +204,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "coordinator": coordinator,
     }
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, _platforms_for(entry))
 
     # Reload on options change
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -241,7 +255,7 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Tear down an account."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, _platforms_for(entry))
     slot = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     if slot:
         api: IrrisenseApi = slot["api"]

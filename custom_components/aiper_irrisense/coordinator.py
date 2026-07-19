@@ -33,11 +33,13 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import IrrisenseApi
 from .const import (
     CONF_ENABLE_EXPERIMENTAL_SENSORS,
+    CONF_ENABLE_WEATHER,
     CONF_HISTORY_REFRESH_HOURS,
     CONF_MAP_REFRESH_HOURS,
     CONF_POLL_INTERVAL,
     CONF_REMINDER_REFRESH_HOURS,
     CONF_WEATHER_REFRESH_HOURS,
+    DEFAULT_ENABLE_WEATHER,
     DEFAULT_FAST_SCAN_INTERVAL,
     DEFAULT_FAST_WINDOW_SECONDS,
     DEFAULT_HISTORY_REFRESH_HOURS,
@@ -229,6 +231,9 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self._history_refresh = int(opts.get(CONF_HISTORY_REFRESH_HOURS, DEFAULT_HISTORY_REFRESH_HOURS)) * 3600
         self._reminder_refresh = int(opts.get(CONF_REMINDER_REFRESH_HOURS, DEFAULT_REMINDER_REFRESH_HOURS)) * 3600
         self._weather_refresh = int(opts.get(CONF_WEATHER_REFRESH_HOURS, DEFAULT_WEATHER_REFRESH_HOURS)) * 3600
+        # Weather is opt-in (default OFF): enabling it sends HA home coordinates
+        # to Aiper's cloud each refresh. Gate the fetch on this flag.
+        self._weather_enabled = bool(opts.get(CONF_ENABLE_WEATHER, DEFAULT_ENABLE_WEATHER))
         # Opt-in experimental sensors (pesticide usage, skip history). Off by
         # default; the entry reloads on options change, so toggling this
         # creates/removes the entities on the next reload.
@@ -335,7 +340,10 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                     continue
                 await self._refresh_device(sn, dev)
 
-            await self._refresh_weather()
+            # Weather is opt-in — skip the fetch entirely when disabled so no
+            # home coordinates are ever sent to Aiper's cloud.
+            if self._weather_enabled:
+                await self._refresh_weather()
 
             return self._data
         except Exception as err:
