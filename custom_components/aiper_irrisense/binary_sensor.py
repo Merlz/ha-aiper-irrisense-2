@@ -73,7 +73,6 @@ class SessionConflictBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "session_conflict")
-        self._attr_name = "Session conflict"
 
     @property
     def is_on(self) -> bool:
