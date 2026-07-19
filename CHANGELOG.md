@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — More entities + internationalisation
+
+### Added
+
+- **Free dose / duration Number entities + current-dose sensor** (#52 by
+  @Patch76). Set any in-range depth (3–23 mm) or point time (1–150 min) beyond
+  the three Dose-select presets; `sensor.*_current_dose` mirrors what the next
+  Start will use.
+- **Rain / wind skip-threshold Number entities** (#46 by @Patch76). Adjust the
+  `rainAmount` / `windSpeed` thresholds above which a scheduled run is skipped;
+  published in mm / km/h and converted to the device's wire units.
+- **Read-only schedule (plan) sensor** (#47 by @Patch76). `sensor.*_schedules`
+  surfaces the device-resident watering plans (queried over MQTT, since REST
+  doesn't expose them). Queried on a 30-minute cadence.
+- **MQTT-connected diagnostic binary sensor** (#48 by @Patch76) — shows whether
+  the AWS IoT command link is up, distinct from the REST-layer `online` sensor.
+- **Live spray-distance sensor** (#50 by @Patch76) — throw reach in metres,
+  derived from the realTimeProgress spray target.
+- **Six locale translations** — German, French, Spanish, Italian, Portuguese,
+  Dutch (#51 by @Patch76). Entity names are now driven by translation keys, so
+  they localise to the HA UI language.
+
+### Notes
+
+- On a non-English install, entity IDs are minted from the localized names, so
+  the example dashboards (keyed on English IDs) may need adjusting — see the
+  Troubleshooting section.
+
 ## [0.4.0] — Features, resilience, security hardening
 
 ### Added

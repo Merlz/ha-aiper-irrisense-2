@@ -6,7 +6,7 @@
   "documentation": "https://github.com/Merlz/ha-aiper-irrisense-2",
   "issue_tracker": "https://github.com/Merlz/ha-aiper-irrisense-2/issues",
   "iot_class": "cloud_polling",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "requirements": [
     "AWSIoTPythonSDK>=1.5.0",
     "certifi>=2024.0.0",
