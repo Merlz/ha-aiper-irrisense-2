@@ -49,6 +49,7 @@
   "entity": {
     "sensor": {
       "current_dose": {"name": "Current dose"},
+      "schedules": {"name": "Schedules"},
       "active_zone": {"name": "Active zone"},
       "active_elapsed": {"name": "Elapsed seconds"},
       "active_total": {"name": "Run total seconds"},

@@ -21,6 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import CONF_ENABLE_EXPERIMENTAL_SENSORS, DOMAIN
 from .coordinator import IrrisenseCoordinator
 from .entity import IrrisenseEntity
+from .schedule import dose_label, parse_plan_detail, weekday_abbr
 
 
 async def async_setup_entry(
@@ -54,6 +55,7 @@ async def async_setup_entry(
                 LastRunSavingSensor(coordinator, sn),
                 LastRunDurationSensor(coordinator, sn),
                 LastRunStatusSensor(coordinator, sn),
+                SchedulesSensor(coordinator, sn),
             ]
         )
         if entry.options.get(CONF_ENABLE_EXPERIMENTAL_SENSORS, False):
@@ -817,3 +819,45 @@ class PesticideUsageSensor(IrrisenseEntity, SensorEntity):
         if regions is None:
             return None
         return {"regions": regions[:20]}
+class SchedulesSensor(IrrisenseEntity, SensorEntity):
+    """Read-only view of the device-resident watering plans (schedules).
+
+    State is the number of plan slots in use (from ``WrPlanOverview``);
+    the ``schedules`` attribute lists each plan's zone/dose/days/time and
+    whether it is enabled (from ``WrPlanDetail``). Read-only: plans are
+    created and edited in the Aiper app, not here.
+    """
+
+    _attr_icon = "mdi:calendar-clock"
+    _attr_translation_key = "schedules"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "schedules")
+
+    @property
+    def native_value(self) -> int:
+        return len(self._slot.get("plan_ids", []))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        plans_raw = self._slot.get("plans", {})
+        schedules = []
+        for pid in sorted(plans_raw):
+            try:
+                p = parse_plan_detail(plans_raw[pid])
+            except (KeyError, ValueError, TypeError):
+                continue
+            schedules.append(
+                {
+                    "plan_id": p.plan_id,
+                    "zone": p.zone_name,
+                    "dose": dose_label(p),
+                    "start_time": p.start_time,
+                    "weekdays": weekday_abbr(p.weekdays),
+                    "weekdays_raw": p.weekdays,
+                    "repeat_type": p.repeat_type,
+                    "enabled": p.enabled,
+                    "estimated_minutes": p.estimated_time,
+                }
+            )
+        return {"schedules": schedules}
