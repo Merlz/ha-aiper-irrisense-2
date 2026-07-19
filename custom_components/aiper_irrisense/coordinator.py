@@ -36,12 +36,14 @@ from .const import (
     CONF_MAP_REFRESH_HOURS,
     CONF_POLL_INTERVAL,
     CONF_REMINDER_REFRESH_HOURS,
+    CONF_WEATHER_REFRESH_HOURS,
     DEFAULT_FAST_SCAN_INTERVAL,
     DEFAULT_FAST_WINDOW_SECONDS,
     DEFAULT_HISTORY_REFRESH_HOURS,
     DEFAULT_MAP_REFRESH_HOURS,
     DEFAULT_REMINDER_REFRESH_HOURS,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_WEATHER_REFRESH_HOURS,
     DOMAIN,
     POINT_TIME_LOW,
     POINT_TIME_PRESETS,
@@ -164,6 +166,11 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self._last_history_fetch: dict[str, float] = {}
         self._last_reminder_fetch: dict[str, float] = {}
         self._last_settings_fetch: dict[str, float] = {}
+        self._last_weather_fetch: float = 0.0
+        # Per-SN parsed WeatherKit payloads (sn -> {currentWeather, forecastDaily}).
+        # One entity per device reads its own SN; the fetch dedups by coordinate
+        # so identical coords (all devices at HA home today) cost ONE API call.
+        self._weather: dict[str, dict[str, Any]] = {}
 
         # User's current Dashboard selection (controls card).
         # Populated by the ZoneSelect / DoseSelect entities; read by the
@@ -213,6 +220,7 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         self._map_refresh = int(opts.get(CONF_MAP_REFRESH_HOURS, DEFAULT_MAP_REFRESH_HOURS)) * 3600
         self._history_refresh = int(opts.get(CONF_HISTORY_REFRESH_HOURS, DEFAULT_HISTORY_REFRESH_HOURS)) * 3600
         self._reminder_refresh = int(opts.get(CONF_REMINDER_REFRESH_HOURS, DEFAULT_REMINDER_REFRESH_HOURS)) * 3600
+        self._weather_refresh = int(opts.get(CONF_WEATHER_REFRESH_HOURS, DEFAULT_WEATHER_REFRESH_HOURS)) * 3600
 
     # ------------------------------------------------------------------ #
     # Public helpers
@@ -222,6 +230,55 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
     def devices(self) -> list[dict]:
         """Return the list of discovered Irrisense device dicts."""
         return list(self.api._devices.values())  # noqa: SLF001
+
+    def weather_for(self, sn: str) -> dict[str, Any] | None:
+        """Latest parsed WeatherKit payload for one device, or None."""
+        return self._weather.get(sn)
+
+    def _resolve_coords(self, sn: str) -> tuple[float, float] | None:
+        """Coordinates to fetch weather for `sn`. The single per-device seam.
+
+        Today every device uses HA's home coordinates. Per-device Aiper
+        location can be wired in here later (look up the device's stored
+        lat/lng, fall back to home) without touching the entity layer.
+        """
+        from .weather_helpers import resolve_coords
+
+        return resolve_coords(self.hass.config.latitude, self.hass.config.longitude)
+
+    async def _refresh_weather(self) -> None:
+        """Fetch per-device weather at most every `_weather_refresh`. Fully
+        failure-isolated: any error is swallowed and last-good is kept so
+        watering is never affected by a weather rate-limit. Dedups by
+        coordinate — devices sharing coords cost a single API call."""
+        try:
+            now = time.time()
+            if self._weather and now - self._last_weather_fetch < self._weather_refresh:
+                return
+            # Group devices by their resolved coordinate so identical coords
+            # (all at HA home today) are fetched once and shared.
+            coord_to_sns: dict[tuple[float, float], list[str]] = {}
+            for dev in self.devices:
+                sn = dev.get("sn")
+                if not sn:
+                    continue
+                coords = self._resolve_coords(sn)
+                if coords is None:
+                    continue
+                coord_to_sns.setdefault(coords, []).append(sn)
+            fetched_any = False
+            for coords, sns in coord_to_sns.items():
+                w = await self.hass.async_add_executor_job(
+                    self.api.get_weather, coords[0], coords[1]
+                )
+                if isinstance(w, dict):
+                    for sn in sns:
+                        self._weather[sn] = w
+                    fetched_any = True
+            if fetched_any:
+                self._last_weather_fetch = now
+        except Exception as err:  # noqa: BLE001 - weather must never break the refresh
+            _LOGGER.debug("weather refresh failed (will retry next poll): %s", err)
 
     def get_device_data(self, sn: str) -> dict[str, Any]:
         return self._data.setdefault(sn, {})
@@ -260,6 +317,8 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                     _LOGGER.debug("Skipping disabled device %s in refresh", sn)
                     continue
                 await self._refresh_device(sn, dev)
+
+            await self._refresh_weather()
 
             return self._data
         except Exception as err:

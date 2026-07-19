@@ -630,6 +630,23 @@ class IrrisenseApi:
     def get_watering_setting(self, sn: str) -> dict | None:
         return self._wr("/wr/getWateringSettingV2", {"sn": sn})
 
+    def get_weather(self, latitude: float, longitude: float) -> dict | None:
+        """Apple-WeatherKit-proxied forecast. Read-only. Returns parsed
+        {currentWeather, forecastDaily} or None. data arrives as a JSON string."""
+        from .weather_helpers import parse_weather_payload
+
+        raw = self._wr(
+            "/weatherkit/getWeather",
+            {
+                "dataSets": "currentWeather,forecastDaily",
+                "language": "en",
+                "latitude": float(latitude),
+                "longitude": float(longitude),
+                "reverseGeocodingValue": "",
+            },
+        )
+        return parse_weather_payload(raw)
+
     def get_nozzle_type_setting(self, sn: str) -> dict | None:
         return self._wr("/wr/getNozzleTypeSetting", {"sn": sn})
 

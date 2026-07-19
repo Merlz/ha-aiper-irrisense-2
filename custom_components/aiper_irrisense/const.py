@@ -42,6 +42,7 @@ CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_MAP_REFRESH_HOURS: Final = "map_refresh_hours"
 CONF_HISTORY_REFRESH_HOURS: Final = "history_refresh_hours"
 CONF_REMINDER_REFRESH_HOURS: Final = "reminder_refresh_hours"
+CONF_WEATHER_REFRESH_HOURS: Final = "weather_refresh_hours"
 
 DEFAULT_SCAN_INTERVAL: Final = 120  # seconds
 DEFAULT_FAST_SCAN_INTERVAL: Final = 5  # seconds during an active watering event
@@ -49,6 +50,7 @@ DEFAULT_FAST_WINDOW_SECONDS: Final = 60
 DEFAULT_MAP_REFRESH_HOURS: Final = 6
 DEFAULT_HISTORY_REFRESH_HOURS: Final = 6
 DEFAULT_REMINDER_REFRESH_HOURS: Final = 24
+DEFAULT_WEATHER_REFRESH_HOURS: Final = 1
 
 # ---- MQTT topic patterns --------------------------------------------------
 # Same AWS IoT infrastructure as the pool cleaner integration — the Irrisense
