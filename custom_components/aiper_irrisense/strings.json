@@ -58,7 +58,8 @@
     },
     "binary_sensor": {
       "online": {"name": "Online"},
-      "watering": {"name": "Watering"}
+      "watering": {"name": "Watering"},
+      "session_conflict": {"name": "Session conflict"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},

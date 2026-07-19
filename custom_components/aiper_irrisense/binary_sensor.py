@@ -29,6 +29,7 @@ async def async_setup_entry(
                 OnlineBinarySensor(coordinator, sn),
                 WateringBinarySensor(coordinator, sn),
                 RainSensingBinarySensor(coordinator, sn),
+                SessionConflictBinarySensor(coordinator, sn),
             ]
         )
     async_add_entities(entities)
@@ -53,6 +54,31 @@ class OnlineBinarySensor(IrrisenseEntity, BinarySensorEntity):
         if isinstance(val, (int, str)):
             return str(val).lower() in ("1", "true", "online")
         return False
+
+
+class SessionConflictBinarySensor(IrrisenseEntity, BinarySensorEntity):
+    """On while another client is contending the Aiper account.
+
+    The cloud allows a single session per account; a login elsewhere (the
+    Aiper app, another integration) evicts this integration's REST token
+    (HTTP 402). This flags that state so it can drive a notification — MQTT
+    rides a separate session and keeps working, only REST-backed data goes
+    stale until the other client releases. Account-scoped, so every device
+    reports the same value.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:account-alert"
+    _attr_translation_key = "session_conflict"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "session_conflict")
+        self._attr_name = "Session conflict"
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self.coordinator.api.session_conflict)
 
 
 class WateringBinarySensor(IrrisenseEntity, BinarySensorEntity):

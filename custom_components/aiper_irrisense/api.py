@@ -188,6 +188,15 @@ class IrrisenseApi:
         self._user_id: str | None = None
         self._token_expires: int = 0
 
+        # Session-conflict (HTTP 402 "account used on another device") state.
+        # Our REST token gets evicted whenever a second client (the Aiper app,
+        # another integration) logs into the same account. Re-claim at most
+        # once per cooldown to avoid a login ping-pong, and expose the flag so
+        # a diagnostic binary_sensor can surface the contention.
+        self._session_conflict: bool = False
+        self._last_conflict_relogin: float = 0.0
+        self._conflict_relogin_cooldown: int = 300
+
         # AWS IoT state
         self._identity_id: str | None = None
         self._identity_pool_id: str | None = None
@@ -350,7 +359,9 @@ class IrrisenseApi:
                 f"Failed to parse decrypted response from {path}: {decrypted[:200]}"
             ) from err
 
-        if retry_login and str(payload.get("code")) in ("401", "403"):
+        code = str(payload.get("code"))
+
+        if retry_login and code in ("401", "403"):
             _LOGGER.info("Token expired; refreshing")
             if self.refresh_token() or self.login():
                 return self._call_encrypted(
@@ -358,6 +369,38 @@ class IrrisenseApi:
                     base_url=base_url, token=self._token,
                     timeout=timeout, retry_login=False,
                 )
+        elif retry_login and code == "402":
+            # 402 = "account used on another device": our token was evicted by
+            # a concurrent login. A re-login re-claims the session but evicts
+            # *them*, so two clients can ping-pong logins forever. Re-claim at
+            # most once per cooldown; if the conflict persists we stop fighting,
+            # flag it, and let REST data go stale until the other client
+            # releases (MQTT rides a separate session and stays up).
+            now = time.time()
+            if now - self._last_conflict_relogin >= self._conflict_relogin_cooldown:
+                self._last_conflict_relogin = now
+                _LOGGER.warning(
+                    "Aiper session evicted (402, account in use elsewhere); "
+                    "re-claiming the session once"
+                )
+                if self.login():
+                    self._session_conflict = False
+                    return self._call_encrypted(
+                        method, path, body,
+                        base_url=base_url, token=self._token,
+                        timeout=timeout, retry_login=False,
+                    )
+            else:
+                _LOGGER.warning(
+                    "Aiper session conflict persists (402); backing off ~%ds to "
+                    "avoid a login ping-pong with the other client",
+                    self._conflict_relogin_cooldown,
+                )
+            self._session_conflict = True
+            return payload
+
+        if self._session_conflict and self._is_success(payload):
+            self._session_conflict = False
 
         return payload
 
@@ -404,6 +447,12 @@ class IrrisenseApi:
         except Exception as err:
             _LOGGER.debug("Token refresh failed: %s", err)
         return False
+
+    @property
+    def session_conflict(self) -> bool:
+        """True while another client is contending the account (a 402 that we
+        backed off from rather than re-claim). Cleared on the next success."""
+        return self._session_conflict
 
     def _get_openid_token(self) -> None:
         try:
