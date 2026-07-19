@@ -379,7 +379,6 @@ class SprayDistanceSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "spray_distance")
-        self._attr_name = "Spray distance"
 
     @property
     def native_value(self) -> float | None:
