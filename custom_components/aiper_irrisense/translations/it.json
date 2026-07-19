@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Accedi con il tuo account Aiper. Verranno aggiunti solo i dispositivi IrriSense (prefisso del numero di serie WR / WG / WC / WL).",
+        "data": {
+          "username": "Indirizzo e-mail",
+          "password": "Password",
+          "region": "Regione"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Autentica di nuovo Aiper Irrisense",
+        "description": "Le credenziali salvate non sono più valide. Inserisci di nuovo la password.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Credenziali non valide.",
+      "cannot_connect": "Impossibile connettersi al cloud Aiper.",
+      "no_devices": "Nessun dispositivo IrriSense (WR / WG / WC / WL) trovato su questo account.",
+      "unknown": "Errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo account è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Aiper Irrisense",
+        "data": {
+          "enable_mqtt": "Abilita MQTT (aggiornamenti in tempo reale)",
+          "mqtt_debug": "Registra tutti i messaggi MQTT (solo debug)",
+          "poll_interval": "Intervallo di polling (secondi)",
+          "map_refresh_hours": "Intervallo di aggiornamento mappa zone (ore)",
+          "history_refresh_hours": "Aggiornamento cronologia / statistiche (ore)",
+          "reminder_refresh_hours": "Aggiornamento ugello / promemoria (ore)",
+          "weather_refresh_hours": "Aggiornamento meteo (ore)",
+          "enable_experimental_sensors": "Attiva sensori sperimentali (uso fitofarmaco, cronologia salti)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "schedules": {"name": "Programmi"},
+      "active_zone": {"name": "Zona attiva"},
+      "current_dose": {"name": "Dose attuale"},
+      "active_elapsed": {"name": "Secondi trascorsi"},
+      "active_total": {"name": "Durata totale ciclo (secondi)"},
+      "active_progress": {"name": "Avanzamento"},
+      "active_repair_layer": {"name": "Passaggi di copertura"},
+      "remaining_time": {"name": "Tempo rimanente"},
+      "head_angle": {"name": "Angolo della testina"},
+      "spray_distance": {"name": "Gittata"},
+      "firmware": {"name": "Versione firmware"},
+      "firmware_mcu": {"name": "Firmware MCU"},
+      "firmware_valve": {"name": "Firmware valvola"},
+      "wifi_rssi": {"name": "Segnale Wi-Fi"},
+      "total_water_yield": {"name": "Acqua totale erogata"},
+      "total_water_saving": {"name": "Acqua totale risparmiata"},
+      "total_events": {"name": "Eventi di irrigazione"},
+      "last_zone": {"name": "Ultima zona irrigata"},
+      "last_skip": {"name": "Motivo dell'ultimo salto"},
+      "pesticide_usage": {"name": "Zone con fitofarmaco"},
+      "last_run_water": {"name": "Acqua ultimo ciclo"},
+      "last_run_saving": {"name": "Acqua risparmiata ultimo ciclo"},
+      "last_run_duration": {"name": "Durata ultimo ciclo"},
+      "last_run_status": {
+        "name": "Stato ultimo ciclo",
+        "state": {
+          "completed": "Completato",
+          "fault": "Guasto",
+          "weather_wind": "Saltato – vento",
+          "weather_rain": "Saltato – previsione pioggia",
+          "on_rain": "Saltato – pioggia",
+          "overlap": "Saltato – sovrapposizione",
+          "manual_stop": "Arrestato manualmente",
+          "water_shortage": "Arrestato – acqua assente",
+          "manual_task": "Saltato – attività manuale",
+          "conflict": "Saltato – conflitto",
+          "un_completed": "Incompleto"
+        }
+      }
+    },
+    "binary_sensor": {
+      "mqtt_connected": {"name": "MQTT connesso"},
+      "online": {"name": "Online"},
+      "rain_sensing": {"name": "Rilevamento pioggia attivo"},
+      "watering": {"name": "Irrigazione"},
+      "session_conflict": {"name": "Conflitto di sessione"},
+      "last_run_fault": {"name": "Guasto ultimo ciclo"}
+    },
+    "number": {
+      "watering_depth": {"name": "Profondità di irrigazione"},
+      "rain_threshold": {"name": "Soglia pioggia"},
+      "wind_threshold": {"name": "Soglia vento"},
+      "watering_duration": {"name": "Durata irrigazione"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Rilevamento pioggia"},
+      "wind_sensing_switch": {"name": "Rilevamento vento"},
+      "reminder_drainage": {"name": "Promemoria drenaggio"},
+      "reminder_pesticide": {"name": "Promemoria fitofarmaco"},
+      "reminder_task": {"name": "Promemoria attività di irrigazione"},
+      "reminder_water_shortage": {"name": "Promemoria mancanza d'acqua"}
+    },
+    "image": {
+      "zone_map": {"name": "Mappa delle zone"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Tipo di ugello"},
+      "watering_zone": {"name": "Zona di irrigazione"},
+      "watering_dose": {"name": "Dose"},
+      "watering_duration": {"name": "Durata"}
+    },
+    "button": {
+      "start_watering": {"name": "Avvia irrigazione"},
+      "stop_watering": {"name": "Arresta irrigazione"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Avvia zona",
+      "description": "Avvia l'irrigazione di una zona specifica."
+    },
+    "stop_zone": {
+      "name": "Arresta zona",
+      "description": "Arresta l'irrigazione di una zona specifica."
+    },
+    "query_work_info": {
+      "name": "Interroga informazioni di lavoro",
+      "description": "Chiedi al dispositivo di pubblicare immediatamente l'istantanea di lavoro corrente."
+    }
+  }
+}

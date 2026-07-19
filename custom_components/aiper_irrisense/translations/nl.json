@@ -1,0 +1,140 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aiper Irrisense 2",
+        "description": "Meld je aan met je Aiper-account. Alleen IrriSense-apparaten (serienummer-prefix WR / WG / WC / WL) worden toegevoegd.",
+        "data": {
+          "username": "E-mailadres",
+          "password": "Wachtwoord",
+          "region": "Regio"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Aiper Irrisense opnieuw verifiëren",
+        "description": "De opgeslagen inloggegevens zijn niet meer geldig. Voer je wachtwoord opnieuw in.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ongeldige inloggegevens.",
+      "cannot_connect": "Kan geen verbinding maken met de Aiper-cloud.",
+      "no_devices": "Er zijn geen IrriSense-apparaten (WR / WG / WC / WL) op dit account gevonden.",
+      "unknown": "Onverwachte fout."
+    },
+    "abort": {
+      "already_configured": "Dit account is al geconfigureerd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aiper Irrisense-opties",
+        "data": {
+          "enable_mqtt": "MQTT inschakelen (realtime updates)",
+          "mqtt_debug": "Alle MQTT-berichten loggen (alleen foutopsporing)",
+          "poll_interval": "Pollinterval (seconden)",
+          "map_refresh_hours": "Vernieuwingsinterval zonekaart (uren)",
+          "history_refresh_hours": "Vernieuwing geschiedenis / statistieken (uren)",
+          "reminder_refresh_hours": "Vernieuwing sproeier / herinnering (uren)",
+          "weather_refresh_hours": "Weervernieuwing (uren)",
+          "enable_experimental_sensors": "Experimentele sensoren inschakelen (gewasbeschermingsgebruik, overslaggeschiedenis)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "schedules": {"name": "Schema's"},
+      "active_zone": {"name": "Actieve zone"},
+      "current_dose": {"name": "Huidige dosis"},
+      "active_elapsed": {"name": "Verstreken seconden"},
+      "active_total": {"name": "Totale cyclusduur (seconden)"},
+      "active_progress": {"name": "Voortgang"},
+      "active_repair_layer": {"name": "Dekkingspassages"},
+      "remaining_time": {"name": "Resterende tijd"},
+      "head_angle": {"name": "Kophoek"},
+      "spray_distance": {"name": "Sproeiafstand"},
+      "firmware": {"name": "Firmwareversie"},
+      "firmware_mcu": {"name": "MCU-firmware"},
+      "firmware_valve": {"name": "Klepfirmware"},
+      "wifi_rssi": {"name": "Wifi-signaal"},
+      "total_water_yield": {"name": "Totaal geleverd water"},
+      "total_water_saving": {"name": "Totaal bespaard water"},
+      "total_events": {"name": "Besproeiingsgebeurtenissen"},
+      "last_zone": {"name": "Laatst besproeide zone"},
+      "last_skip": {"name": "Reden van laatste overslag"},
+      "pesticide_usage": {"name": "Zones met gewasbescherming"},
+      "last_run_water": {"name": "Water laatste cyclus"},
+      "last_run_saving": {"name": "Bespaard water laatste cyclus"},
+      "last_run_duration": {"name": "Duur laatste cyclus"},
+      "last_run_status": {
+        "name": "Status laatste cyclus",
+        "state": {
+          "completed": "Voltooid",
+          "fault": "Storing",
+          "weather_wind": "Overgeslagen – wind",
+          "weather_rain": "Overgeslagen – regenverwachting",
+          "on_rain": "Overgeslagen – regen",
+          "overlap": "Overgeslagen – overlap",
+          "manual_stop": "Handmatig gestopt",
+          "water_shortage": "Gestopt – geen water",
+          "manual_task": "Overgeslagen – handmatige taak",
+          "conflict": "Overgeslagen – conflict",
+          "un_completed": "Onvolledig"
+        }
+      }
+    },
+    "binary_sensor": {
+      "mqtt_connected": {"name": "MQTT verbonden"},
+      "online": {"name": "Online"},
+      "rain_sensing": {"name": "Regendetectie actief"},
+      "watering": {"name": "Besproeiing"},
+      "session_conflict": {"name": "Sessieconflict"},
+      "last_run_fault": {"name": "Storing laatste cyclus"}
+    },
+    "number": {
+      "watering_depth": {"name": "Besproeiingsdiepte"},
+      "rain_threshold": {"name": "Regendrempel"},
+      "wind_threshold": {"name": "Winddrempel"},
+      "watering_duration": {"name": "Besproeiingsduur"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Regendetectie"},
+      "wind_sensing_switch": {"name": "Winddetectie"},
+      "reminder_drainage": {"name": "Herinnering aftappen"},
+      "reminder_pesticide": {"name": "Herinnering gewasbescherming"},
+      "reminder_task": {"name": "Herinnering besproeiingstaak"},
+      "reminder_water_shortage": {"name": "Herinnering watertekort"}
+    },
+    "image": {
+      "zone_map": {"name": "Zonekaart"}
+    },
+    "select": {
+      "nozzle_type": {"name": "Sproeiertype"},
+      "watering_zone": {"name": "Besproeiingszone"},
+      "watering_dose": {"name": "Dosis"},
+      "watering_duration": {"name": "Duur"}
+    },
+    "button": {
+      "start_watering": {"name": "Besproeiing starten"},
+      "stop_watering": {"name": "Besproeiing stoppen"}
+    }
+  },
+  "services": {
+    "start_zone": {
+      "name": "Zone starten",
+      "description": "Start de besproeiing van een specifieke zone."
+    },
+    "stop_zone": {
+      "name": "Zone stoppen",
+      "description": "Stop de besproeiing van een specifieke zone."
+    },
+    "query_work_info": {
+      "name": "Werkinfo opvragen",
+      "description": "Vraag het apparaat om onmiddellijk zijn huidige werkstatus te publiceren."
+    }
+  }
+}

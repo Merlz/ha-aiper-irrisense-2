@@ -57,7 +57,6 @@ class StartWateringButton(IrrisenseEntity, ButtonEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "start_watering")
-        self._attr_name = "Start watering"
 
     async def async_press(self) -> None:
         zone_id = self.coordinator.get_zone_selection(self._sn)
@@ -114,7 +113,6 @@ class StopWateringButton(IrrisenseEntity, ButtonEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "stop_watering")
-        self._attr_name = "Stop watering"
 
     async def async_press(self) -> None:
         # Prefer the device's own "what's running now" — the selection

@@ -14,13 +14,15 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfVolume
+from homeassistant.const import EntityCategory, UnitOfLength, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ENABLE_EXPERIMENTAL_SENSORS, DOMAIN
 from .coordinator import IrrisenseCoordinator
 from .entity import IrrisenseEntity
+from .geometry import spray_reach_m
+from .schedule import dose_label, parse_plan_detail, weekday_abbr
 
 
 async def async_setup_entry(
@@ -42,6 +44,7 @@ async def async_setup_entry(
                 ActiveRepairLayerSensor(coordinator, sn),
                 RemainingTimeSensor(coordinator, sn),
                 HeadAngleSensor(coordinator, sn),
+                SprayDistanceSensor(coordinator, sn),
                 FirmwareSensor(coordinator, sn),
                 McuFirmwareSensor(coordinator, sn),
                 ValveFirmwareSensor(coordinator, sn),
@@ -54,6 +57,7 @@ async def async_setup_entry(
                 LastRunSavingSensor(coordinator, sn),
                 LastRunDurationSensor(coordinator, sn),
                 LastRunStatusSensor(coordinator, sn),
+                SchedulesSensor(coordinator, sn),
             ]
         )
         if entry.options.get(CONF_ENABLE_EXPERIMENTAL_SENSORS, False):
@@ -85,7 +89,6 @@ class ActiveZoneSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "active_zone")
-        self._attr_name = "Active zone"
 
     @property
     def native_value(self) -> str | None:
@@ -202,7 +205,6 @@ class ActiveElapsedSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "active_elapsed")
-        self._attr_name = "Elapsed seconds"
 
     @property
     def native_value(self) -> int | None:
@@ -229,7 +231,6 @@ class ActiveTotalSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "active_total")
-        self._attr_name = "Run total seconds"
 
     @property
     def native_value(self) -> int | None:
@@ -258,7 +259,6 @@ class ActiveProgressSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "active_progress")
-        self._attr_name = "Progress"
 
     @property
     def native_value(self) -> float | None:
@@ -303,7 +303,6 @@ class ActiveRepairLayerSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "active_repair_layer")
-        self._attr_name = "Coverage passes"
 
     @property
     def native_value(self) -> int | None:
@@ -333,7 +332,6 @@ class RemainingTimeSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "remaining_time")
-        self._attr_name = "Remaining time"
 
     @property
     def native_value(self) -> int | None:
@@ -370,7 +368,6 @@ class HeadAngleSensor(_ActiveMetricBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "head_angle")
-        self._attr_name = "Head angle"
 
     @property
     def native_value(self) -> float | None:
@@ -385,6 +382,33 @@ class HeadAngleSensor(_ActiveMetricBase):
             return None
         angle = (90.0 - math.degrees(math.atan2(y, x))) % 360.0
         return round(angle, 1)
+
+
+class SprayDistanceSensor(_ActiveMetricBase):
+    """Live throw distance of the water, in metres.
+
+    The realTimeProgress stream reports the spray target as Cartesian
+    ``x`` / ``y`` (head at the origin); the reach is the radius
+    ``hypot(x, y)`` scaled to metres. The protocol carries no unit, so the
+    metre value uses an empirical calibration (see ``geometry.py``) and is
+    approximate. None when idle.
+    """
+
+    _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_native_unit_of_measurement = UnitOfLength.METERS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:sprinkler-variant"
+    _attr_translation_key = "spray_distance"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "spray_distance")
+
+    @property
+    def native_value(self) -> float | None:
+        live = self._live()
+        if not live:
+            return None
+        return spray_reach_m(live.get("x"), live.get("y"))
 
 
 # --------------------------------------------------------------------------- #
@@ -419,7 +443,6 @@ class FirmwareSensor(_FirmwareBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "firmware")
-        self._attr_name = "Firmware version"
 
 
 class McuFirmwareSensor(_FirmwareBase):
@@ -428,7 +451,6 @@ class McuFirmwareSensor(_FirmwareBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "firmware_mcu")
-        self._attr_name = "MCU firmware"
 
 
 class ValveFirmwareSensor(_FirmwareBase):
@@ -437,7 +459,6 @@ class ValveFirmwareSensor(_FirmwareBase):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "firmware_valve")
-        self._attr_name = "Valve firmware"
 
 
 # --------------------------------------------------------------------------- #
@@ -454,7 +475,6 @@ class WifiRssiSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "wifi_rssi")
-        self._attr_name = "WiFi signal"
 
     @property
     def native_value(self) -> int | None:
@@ -487,7 +507,6 @@ class TotalWaterYieldSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "total_water_yield")
-        self._attr_name = "Total water delivered"
 
     @property
     def native_value(self) -> float | None:
@@ -508,7 +527,6 @@ class TotalWaterSavingSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "total_water_saving")
-        self._attr_name = "Total water saved"
 
     @property
     def native_value(self) -> float | None:
@@ -528,7 +546,6 @@ class TotalWateringEventsSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "total_events")
-        self._attr_name = "Watering events"
 
     @property
     def native_value(self) -> int | None:
@@ -546,7 +563,6 @@ class LastWateringZoneSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_zone")
-        self._attr_name = "Last watered zone"
 
     @property
     def native_value(self) -> str | None:
@@ -597,7 +613,6 @@ class LastRunWaterSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_water")
-        self._attr_name = "Last run water"
 
     @property
     def native_value(self) -> float | None:
@@ -642,7 +657,6 @@ class LastRunSavingSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_saving")
-        self._attr_name = "Last run water saved"
 
     @property
     def native_value(self) -> float | None:
@@ -671,7 +685,6 @@ class LastRunDurationSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_duration")
-        self._attr_name = "Last run duration"
 
     @property
     def native_value(self) -> int | None:
@@ -699,7 +712,6 @@ class LastRunStatusSensor(IrrisenseEntity, SensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_status")
-        self._attr_name = "Last run status"
 
     @property
     def native_value(self) -> str | None:
@@ -817,3 +829,45 @@ class PesticideUsageSensor(IrrisenseEntity, SensorEntity):
         if regions is None:
             return None
         return {"regions": regions[:20]}
+class SchedulesSensor(IrrisenseEntity, SensorEntity):
+    """Read-only view of the device-resident watering plans (schedules).
+
+    State is the number of plan slots in use (from ``WrPlanOverview``);
+    the ``schedules`` attribute lists each plan's zone/dose/days/time and
+    whether it is enabled (from ``WrPlanDetail``). Read-only: plans are
+    created and edited in the Aiper app, not here.
+    """
+
+    _attr_icon = "mdi:calendar-clock"
+    _attr_translation_key = "schedules"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "schedules")
+
+    @property
+    def native_value(self) -> int:
+        return len(self._slot.get("plan_ids", []))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        plans_raw = self._slot.get("plans", {})
+        schedules = []
+        for pid in sorted(plans_raw):
+            try:
+                p = parse_plan_detail(plans_raw[pid])
+            except (KeyError, ValueError, TypeError):
+                continue
+            schedules.append(
+                {
+                    "plan_id": p.plan_id,
+                    "zone": p.zone_name,
+                    "dose": dose_label(p),
+                    "start_time": p.start_time,
+                    "weekdays": weekday_abbr(p.weekdays),
+                    "weekdays_raw": p.weekdays,
+                    "repeat_type": p.repeat_type,
+                    "enabled": p.enabled,
+                    "estimated_minutes": p.estimated_time,
+                }
+            )
+        return {"schedules": schedules}

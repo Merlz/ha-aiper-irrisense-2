@@ -72,7 +72,6 @@ class NozzleTypeSelect(IrrisenseEntity, SelectEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "nozzle_type")
-        self._attr_name = "Nozzle type"
         self._attr_options = list(NOZZLE_TYPE_LABELS.values())
 
     @property
@@ -133,7 +132,6 @@ class ZoneSelect(IrrisenseEntity, SelectEntity, RestoreEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "watering_zone")
-        self._attr_name = "Watering zone"
         self._refresh_options()
 
     # ----- Options ---------------------------------------------------------
@@ -221,11 +219,9 @@ class DoseSelect(IrrisenseEntity, SelectEntity, RestoreEntity):
         """Rewrite options + name + icon to match the zone type."""
         self._attr_options = dose_options_for_region_type(region_type)
         if region_type == REGION_TYPE_POINT:
-            self._attr_name = "Duration"
             self._attr_icon = "mdi:timer-outline"
             self._attr_translation_key = "watering_duration"
         else:
-            self._attr_name = "Dose"
             self._attr_icon = "mdi:water"
             self._attr_translation_key = "watering_dose"
 

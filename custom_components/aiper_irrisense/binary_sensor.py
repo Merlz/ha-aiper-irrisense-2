@@ -27,6 +27,7 @@ async def async_setup_entry(
         entities.extend(
             [
                 OnlineBinarySensor(coordinator, sn),
+                MqttConnectedBinarySensor(coordinator, sn),
                 WateringBinarySensor(coordinator, sn),
                 RainSensingBinarySensor(coordinator, sn),
                 SessionConflictBinarySensor(coordinator, sn),
@@ -43,7 +44,6 @@ class OnlineBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "online")
-        self._attr_name = "Online"
 
     @property
     def is_on(self) -> bool:
@@ -75,7 +75,6 @@ class SessionConflictBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "session_conflict")
-        self._attr_name = "Session conflict"
 
     @property
     def is_on(self) -> bool:
@@ -89,7 +88,6 @@ class WateringBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "watering")
-        self._attr_name = "Watering"
 
     @property
     def is_on(self) -> bool:
@@ -113,7 +111,6 @@ class RainSensingBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "rain_sensing")
-        self._attr_name = "Rain sensing active"
 
     @property
     def is_on(self) -> bool:
@@ -147,7 +144,6 @@ class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "last_run_fault")
-        self._attr_name = "Last run fault"
 
     @property
     def is_on(self) -> bool | None:
@@ -155,3 +151,26 @@ class LastRunFaultBinarySensor(IrrisenseEntity, BinarySensorEntity):
         if last is None:
             return None
         return last.get("taskStatus") in _TASK_STATUS_PROBLEM
+class MqttConnectedBinarySensor(IrrisenseEntity, BinarySensorEntity):
+    """Whether the integration's AWS IoT MQTT link is up.
+
+    Distinct from `online` / `session_conflict`, which reflect the REST/cloud
+    layer. Commands (setWorkMode, plan queries) ride MQTT, so this shows when
+    they can actually be delivered. AWS IoT allows one connection per Cognito
+    identity (last connect wins), so opening the iOS Aiper app evicts this
+    link until auto-recovery reconnects.
+
+    Reflects the client's connected belief: it can briefly read "on" during a
+    half-dead state where the socket is up but publishes time out.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "mqtt_connected"
+
+    def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
+        super().__init__(coordinator, sn, "mqtt_connected")
+
+    @property
+    def is_on(self) -> bool:
+        return self.coordinator.api.is_mqtt_connected()

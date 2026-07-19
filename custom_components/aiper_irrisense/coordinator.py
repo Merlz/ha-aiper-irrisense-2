@@ -31,6 +31,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import IrrisenseApi
+from .schedule import parse_overview
 from .const import (
     CONF_ENABLE_EXPERIMENTAL_SENSORS,
     CONF_ENABLE_WEATHER,
@@ -185,6 +186,8 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         # re-fetch getEquipment every ~10 min so an intermittent 402 doesn't
         # churn the whole entity set.
         self._last_devlist_refresh: float = 0.0
+        # Watering-plan MQTT query cadence (see _refresh_device).
+        self._last_plans_query: dict[str, float] = {}
 
         # User's current Dashboard selection (controls card).
         # Populated by the ZoneSelect / DoseSelect entities; read by the
@@ -435,6 +438,36 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                 )
             self._last_experimental_fetch[sn] = now
 
+        # Watering plans (schedules) are device-resident and only reachable
+        # over the MQTT command channel — not REST. Fire the overview + a
+        # detail query per known plan; responses resolve in
+        # `handle_mqtt_message` (eventual consistency). Plans change rarely,
+        # so this runs on its own 30-min cadence rather than every poll —
+        # during a fast-poll window a per-poll publish would fire every 5 s.
+        # The cadence stamp only advances after a query actually went out, so
+        # an MQTT-down skip retries on the next poll instead of in 30 min.
+        if now - self._last_plans_query.get(sn, 0) > _SETTINGS_REFRESH_SECONDS:
+            if await self._query_plans(sn, slot):
+                self._last_plans_query[sn] = now
+
+    async def _query_plans(self, sn: str, slot: dict[str, Any]) -> bool:
+        """Publish `WrPlanOverview` + a `WrPlanDetail` per known plan id.
+
+        Fire-and-forget over MQTT. The overview discovers which slots are in
+        use; the per-id details fill in on the next cycle. Returns False
+        (no-op) when MQTT is down, so the caller can retry next poll.
+        """
+        if not self.api.is_mqtt_connected():
+            return False
+        await self.hass.async_add_executor_job(
+            self.api._publish_cmd, sn, "WrPlanOverview", {}  # noqa: SLF001
+        )
+        for pid in list(slot.get("plan_ids", [])):
+            await self.hass.async_add_executor_job(
+                self.api._publish_cmd, sn, "WrPlanDetail", {"plan_id": pid}  # noqa: SLF001
+            )
+        return True
+
     # ------------------------------------------------------------------ #
     # MQTT integration
     # ------------------------------------------------------------------ #
@@ -509,6 +542,22 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
                     "_ts": time.time(),
                 }
                 mqtt_slot[f"up_{cmd_base}"] = normalised
+                # Watering-plan (schedule) responses need per-plan accumulation
+                # instead of the single-slot `up_<cmd>` stash: WrPlanDetail
+                # arrives once per plan and would otherwise overwrite itself.
+                if cmd_base == "WrPlanOverview":
+                    ids = parse_overview(body or {})
+                    slot["plan_ids"] = ids
+                    plans = slot.setdefault("plans", {})
+                    for stale in [p for p in plans if p not in ids]:
+                        plans.pop(stale, None)
+                elif cmd_base == "WrPlanDetail":
+                    try:
+                        pid = int((body or {}).get("plan_id"))
+                    except (TypeError, ValueError):
+                        pid = None
+                    if pid is not None:
+                        slot.setdefault("plans", {})[pid] = body
                 # Clear the ACK watchdog whenever the device echoes a
                 # command type we were waiting on.
                 try:

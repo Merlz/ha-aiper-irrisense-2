@@ -49,6 +49,7 @@
   "entity": {
     "sensor": {
       "current_dose": {"name": "Current dose"},
+      "schedules": {"name": "Schedules"},
       "active_zone": {"name": "Active zone"},
       "active_elapsed": {"name": "Elapsed seconds"},
       "active_total": {"name": "Run total seconds"},
@@ -56,7 +57,14 @@
       "active_repair_layer": {"name": "Coverage passes"},
       "remaining_time": {"name": "Remaining time"},
       "head_angle": {"name": "Head angle"},
+      "spray_distance": {"name": "Spray distance"},
       "firmware": {"name": "Firmware version"},
+      "firmware_mcu": {"name": "MCU firmware"},
+      "firmware_valve": {"name": "Valve firmware"},
+      "wifi_rssi": {"name": "WiFi signal"},
+      "total_water_yield": {"name": "Total water delivered"},
+      "total_water_saving": {"name": "Total water saved"},
+      "total_events": {"name": "Watering events"},
       "water_today": {"name": "Water usage today"},
       "water_week": {"name": "Water usage this week"},
       "water_month": {"name": "Water usage this month"},
@@ -84,14 +92,29 @@
       "pesticide_usage": {"name": "Pesticide usage zones"}
     },
     "binary_sensor": {
+      "mqtt_connected": {"name": "MQTT connected"},
       "online": {"name": "Online"},
       "watering": {"name": "Watering"},
       "session_conflict": {"name": "Session conflict"},
-      "last_run_fault": {"name": "Last run fault"}
+      "last_run_fault": {"name": "Last run fault"},
+      "rain_sensing": {"name": "Rain sensing active"}
+    },
+    "image": {
+      "zone_map": {"name": "Zone map"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Rain sensing"},
+      "wind_sensing_switch": {"name": "Wind sensing"},
+      "reminder_drainage": {"name": "Drainage reminder"},
+      "reminder_pesticide": {"name": "Pesticide reminder"},
+      "reminder_task": {"name": "Task reminder"},
+      "reminder_water_shortage": {"name": "Water shortage reminder"}
     },
     "number": {
       "watering_depth": {"name": "Watering depth"},
-      "watering_duration": {"name": "Watering duration"}
+      "watering_duration": {"name": "Watering duration"},
+      "rain_threshold": {"name": "Rain threshold"},
+      "wind_threshold": {"name": "Wind threshold"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},

@@ -246,6 +246,12 @@ issue with what you found — the community will benefit):
   prefix with your own device's prefix (Settings → Devices & services →
   your device → any entity, e.g. `sensor.<your_prefix>_active_zone`) before
   saving.
+- **Example dashboards don't match on a non-English install** — entity IDs are
+  generated from entity names, which are now localized (de/fr/es/it/pt/nl). On
+  a non-English setup the IDs are minted in your language (e.g.
+  `sensor.<prefix>_wurfweite` rather than `_spray_distance`). Check the actual
+  IDs under Settings → Devices & services → your device and adjust the example
+  YAML to match.
 
 For anything else, open an issue with:
 - HA version
