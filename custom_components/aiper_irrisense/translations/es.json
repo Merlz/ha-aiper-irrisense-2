@@ -39,7 +39,8 @@
           "map_refresh_hours": "Intervalo de actualización del mapa de zonas (horas)",
           "history_refresh_hours": "Actualización de historial / estadísticas (horas)",
           "reminder_refresh_hours": "Actualización de boquilla / recordatorio (horas)",
-          "weather_refresh_hours": "Actualización del tiempo (horas)"
+          "weather_refresh_hours": "Actualización del tiempo (horas)",
+          "enable_experimental_sensors": "Activar sensores experimentales (uso de fitosanitario, historial de saltos)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Agua total ahorrada"},
       "total_events": {"name": "Eventos de riego"},
       "last_zone": {"name": "Última zona regada"},
+      "last_skip": {"name": "Motivo del último salto"},
+      "pesticide_usage": {"name": "Zonas con fitosanitario"},
       "last_run_water": {"name": "Agua del último ciclo"},
       "last_run_saving": {"name": "Agua ahorrada en el último ciclo"},
       "last_run_duration": {"name": "Duración del último ciclo"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Profundidad de riego"},
+      "rain_threshold": {"name": "Umbral de lluvia"},
+      "wind_threshold": {"name": "Umbral de viento"},
       "watering_duration": {"name": "Duración de riego"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Detección de lluvia"},
+      "wind_sensing_switch": {"name": "Detección de viento"},
+      "reminder_drainage": {"name": "Recordatorio de drenaje"},
+      "reminder_pesticide": {"name": "Recordatorio de fitosanitario"},
+      "reminder_task": {"name": "Recordatorio de tarea de riego"},
+      "reminder_water_shortage": {"name": "Recordatorio de falta de agua"}
     },
     "select": {
       "nozzle_type": {"name": "Tipo de boquilla"},

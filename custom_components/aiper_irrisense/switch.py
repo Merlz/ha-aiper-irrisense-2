@@ -224,7 +224,7 @@ class _SettingSwitch(IrrisenseEntity, SwitchEntity):
             )
         if not ok:
             raise HomeAssistantError(
-                f"Failed to update {self._attr_name or self._setting_key}"
+                f"Failed to update {self.name or self._setting_key}"
             )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -242,7 +242,6 @@ class RainSensingSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "rain_sensing_switch")
-        self._attr_name = "Rain sensing"
 
 
 class WindSensingSwitch(_SettingSwitch):
@@ -253,7 +252,6 @@ class WindSensingSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "wind_sensing_switch")
-        self._attr_name = "Wind sensing"
 
 
 class DrainageReminderSwitch(_SettingSwitch):
@@ -266,7 +264,6 @@ class DrainageReminderSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "reminder_drainage")
-        self._attr_name = "Drainage reminder"
 
 
 class PesticideReminderSwitch(_SettingSwitch):
@@ -279,7 +276,6 @@ class PesticideReminderSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "reminder_pesticide")
-        self._attr_name = "Pesticide reminder"
 
 
 class TaskReminderSwitch(_SettingSwitch):
@@ -292,7 +288,6 @@ class TaskReminderSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "reminder_task")
-        self._attr_name = "Task reminder"
 
 
 class WaterShortageReminderSwitch(_SettingSwitch):
@@ -305,4 +300,3 @@ class WaterShortageReminderSwitch(_SettingSwitch):
 
     def __init__(self, coordinator: IrrisenseCoordinator, sn: str) -> None:
         super().__init__(coordinator, sn, "reminder_water_shortage")
-        self._attr_name = "Water shortage reminder"

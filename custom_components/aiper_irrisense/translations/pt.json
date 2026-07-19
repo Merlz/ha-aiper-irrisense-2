@@ -39,7 +39,8 @@
           "map_refresh_hours": "Intervalo de atualização do mapa de zonas (horas)",
           "history_refresh_hours": "Atualização de histórico / estatísticas (horas)",
           "reminder_refresh_hours": "Atualização de bico / lembrete (horas)",
-          "weather_refresh_hours": "Atualização meteorológica (horas)"
+          "weather_refresh_hours": "Atualização meteorológica (horas)",
+          "enable_experimental_sensors": "Ativar sensores experimentais (uso de fitofármaco, histórico de saltos)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Água total poupada"},
       "total_events": {"name": "Eventos de rega"},
       "last_zone": {"name": "Última zona regada"},
+      "last_skip": {"name": "Motivo do último salto"},
+      "pesticide_usage": {"name": "Zonas com fitofármaco"},
       "last_run_water": {"name": "Água do último ciclo"},
       "last_run_saving": {"name": "Água poupada no último ciclo"},
       "last_run_duration": {"name": "Duração do último ciclo"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Profundidade de rega"},
+      "rain_threshold": {"name": "Limiar de chuva"},
+      "wind_threshold": {"name": "Limiar de vento"},
       "watering_duration": {"name": "Duração da rega"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Deteção de chuva"},
+      "wind_sensing_switch": {"name": "Deteção de vento"},
+      "reminder_drainage": {"name": "Lembrete de drenagem"},
+      "reminder_pesticide": {"name": "Lembrete de fitofármaco"},
+      "reminder_task": {"name": "Lembrete de tarefa de rega"},
+      "reminder_water_shortage": {"name": "Lembrete de falta de água"}
     },
     "select": {
       "nozzle_type": {"name": "Tipo de bico"},

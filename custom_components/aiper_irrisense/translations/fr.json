@@ -39,7 +39,8 @@
           "map_refresh_hours": "Intervalle d'actualisation de la carte des zones (heures)",
           "history_refresh_hours": "Actualisation de l'historique / des statistiques (heures)",
           "reminder_refresh_hours": "Actualisation buse / rappel (heures)",
-          "weather_refresh_hours": "Actualisation météo (heures)"
+          "weather_refresh_hours": "Actualisation météo (heures)",
+          "enable_experimental_sensors": "Activer les capteurs expérimentaux (usage phytosanitaire, historique des sauts)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Eau totale économisée"},
       "total_events": {"name": "Cycles d'arrosage"},
       "last_zone": {"name": "Dernière zone arrosée"},
+      "last_skip": {"name": "Motif du dernier saut"},
+      "pesticide_usage": {"name": "Zones avec produit phytosanitaire"},
       "last_run_water": {"name": "Eau du dernier cycle"},
       "last_run_saving": {"name": "Eau économisée au dernier cycle"},
       "last_run_duration": {"name": "Durée du dernier cycle"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Profondeur d'arrosage"},
+      "rain_threshold": {"name": "Seuil de pluie"},
+      "wind_threshold": {"name": "Seuil de vent"},
       "watering_duration": {"name": "Durée d'arrosage"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Détection de pluie"},
+      "wind_sensing_switch": {"name": "Détection du vent"},
+      "reminder_drainage": {"name": "Rappel de vidange"},
+      "reminder_pesticide": {"name": "Rappel de produit phytosanitaire"},
+      "reminder_task": {"name": "Rappel de tâche d'arrosage"},
+      "reminder_water_shortage": {"name": "Rappel de manque d'eau"}
     },
     "select": {
       "nozzle_type": {"name": "Type de buse"},

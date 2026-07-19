@@ -39,7 +39,8 @@
           "map_refresh_hours": "Zone-map refresh interval (hours)",
           "history_refresh_hours": "History / stats refresh (hours)",
           "reminder_refresh_hours": "Nozzle / reminder refresh (hours)",
-          "weather_refresh_hours": "Weather refresh (hours)"
+          "weather_refresh_hours": "Weather refresh (hours)",
+          "enable_experimental_sensors": "Enable experimental sensors (pesticide usage, skip history)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Total water saved"},
       "total_events": {"name": "Watering events"},
       "last_zone": {"name": "Last watered zone"},
+      "last_skip": {"name": "Last skip reason"},
+      "pesticide_usage": {"name": "Pesticide usage zones"},
       "last_run_water": {"name": "Last run water"},
       "last_run_saving": {"name": "Last run water saved"},
       "last_run_duration": {"name": "Last run duration"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Watering depth"},
+      "rain_threshold": {"name": "Rain threshold"},
+      "wind_threshold": {"name": "Wind threshold"},
       "watering_duration": {"name": "Watering duration"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Rain sensing"},
+      "wind_sensing_switch": {"name": "Wind sensing"},
+      "reminder_drainage": {"name": "Drainage reminder"},
+      "reminder_pesticide": {"name": "Pesticide reminder"},
+      "reminder_task": {"name": "Task reminder"},
+      "reminder_water_shortage": {"name": "Water shortage reminder"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},

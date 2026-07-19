@@ -39,7 +39,8 @@
           "map_refresh_hours": "Vernieuwingsinterval zonekaart (uren)",
           "history_refresh_hours": "Vernieuwing geschiedenis / statistieken (uren)",
           "reminder_refresh_hours": "Vernieuwing sproeier / herinnering (uren)",
-          "weather_refresh_hours": "Weervernieuwing (uren)"
+          "weather_refresh_hours": "Weervernieuwing (uren)",
+          "enable_experimental_sensors": "Experimentele sensoren inschakelen (gewasbeschermingsgebruik, overslaggeschiedenis)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Totaal bespaard water"},
       "total_events": {"name": "Besproeiingsgebeurtenissen"},
       "last_zone": {"name": "Laatst besproeide zone"},
+      "last_skip": {"name": "Reden van laatste overslag"},
+      "pesticide_usage": {"name": "Zones met gewasbescherming"},
       "last_run_water": {"name": "Water laatste cyclus"},
       "last_run_saving": {"name": "Bespaard water laatste cyclus"},
       "last_run_duration": {"name": "Duur laatste cyclus"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Besproeiingsdiepte"},
+      "rain_threshold": {"name": "Regendrempel"},
+      "wind_threshold": {"name": "Winddrempel"},
       "watering_duration": {"name": "Besproeiingsduur"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Regendetectie"},
+      "wind_sensing_switch": {"name": "Winddetectie"},
+      "reminder_drainage": {"name": "Herinnering aftappen"},
+      "reminder_pesticide": {"name": "Herinnering gewasbescherming"},
+      "reminder_task": {"name": "Herinnering besproeiingstaak"},
+      "reminder_water_shortage": {"name": "Herinnering watertekort"}
     },
     "select": {
       "nozzle_type": {"name": "Sproeiertype"},

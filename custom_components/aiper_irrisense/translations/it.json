@@ -39,7 +39,8 @@
           "map_refresh_hours": "Intervallo di aggiornamento mappa zone (ore)",
           "history_refresh_hours": "Aggiornamento cronologia / statistiche (ore)",
           "reminder_refresh_hours": "Aggiornamento ugello / promemoria (ore)",
-          "weather_refresh_hours": "Aggiornamento meteo (ore)"
+          "weather_refresh_hours": "Aggiornamento meteo (ore)",
+          "enable_experimental_sensors": "Attiva sensori sperimentali (uso fitofarmaco, cronologia salti)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Acqua totale risparmiata"},
       "total_events": {"name": "Eventi di irrigazione"},
       "last_zone": {"name": "Ultima zona irrigata"},
+      "last_skip": {"name": "Motivo dell'ultimo salto"},
+      "pesticide_usage": {"name": "Zone con fitofarmaco"},
       "last_run_water": {"name": "Acqua ultimo ciclo"},
       "last_run_saving": {"name": "Acqua risparmiata ultimo ciclo"},
       "last_run_duration": {"name": "Durata ultimo ciclo"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Profondità di irrigazione"},
+      "rain_threshold": {"name": "Soglia pioggia"},
+      "wind_threshold": {"name": "Soglia vento"},
       "watering_duration": {"name": "Durata irrigazione"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Rilevamento pioggia"},
+      "wind_sensing_switch": {"name": "Rilevamento vento"},
+      "reminder_drainage": {"name": "Promemoria drenaggio"},
+      "reminder_pesticide": {"name": "Promemoria fitofarmaco"},
+      "reminder_task": {"name": "Promemoria attività di irrigazione"},
+      "reminder_water_shortage": {"name": "Promemoria mancanza d'acqua"}
     },
     "select": {
       "nozzle_type": {"name": "Tipo di ugello"},

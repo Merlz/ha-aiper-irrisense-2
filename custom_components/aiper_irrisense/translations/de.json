@@ -39,7 +39,8 @@
           "map_refresh_hours": "Aktualisierungsintervall Zonenkarte (Stunden)",
           "history_refresh_hours": "Aktualisierung Verlauf / Statistik (Stunden)",
           "reminder_refresh_hours": "Aktualisierung Düse / Erinnerung (Stunden)",
-          "weather_refresh_hours": "Wetter-Aktualisierung (Stunden)"
+          "weather_refresh_hours": "Wetter-Aktualisierung (Stunden)",
+          "enable_experimental_sensors": "Experimentelle Sensoren aktivieren (Pflanzenschutzmittel-Nutzung, Übersprung-Verlauf)"
         }
       }
     }
@@ -63,6 +64,8 @@
       "total_water_saving": {"name": "Wasser gespart gesamt"},
       "total_events": {"name": "Bewässerungsvorgänge"},
       "last_zone": {"name": "Zuletzt bewässerte Zone"},
+      "last_skip": {"name": "Grund des letzten Übersprungs"},
+      "pesticide_usage": {"name": "Zonen mit Pflanzenschutzmittel"},
       "last_run_water": {"name": "Wasser letzter Lauf"},
       "last_run_saving": {"name": "Wasserersparnis letzter Lauf"},
       "last_run_duration": {"name": "Dauer letzter Lauf"},
@@ -92,7 +95,17 @@
     },
     "number": {
       "watering_depth": {"name": "Bewässerungstiefe"},
+      "rain_threshold": {"name": "Regenschwelle"},
+      "wind_threshold": {"name": "Windschwelle"},
       "watering_duration": {"name": "Bewässerungsdauer"}
+    },
+    "switch": {
+      "rain_sensing_switch": {"name": "Regenerkennung"},
+      "wind_sensing_switch": {"name": "Winderkennung"},
+      "reminder_drainage": {"name": "Erinnerung Entwässerung"},
+      "reminder_pesticide": {"name": "Erinnerung Pflanzenschutzmittel"},
+      "reminder_task": {"name": "Erinnerung Bewässerungsaufgabe"},
+      "reminder_water_shortage": {"name": "Erinnerung Wassermangel"}
     },
     "select": {
       "nozzle_type": {"name": "Düsentyp"},
