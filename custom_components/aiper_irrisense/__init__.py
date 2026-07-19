@@ -46,8 +46,12 @@ def _platforms_for(entry: ConfigEntry) -> list[Platform]:
     """Platforms to set up for this entry.
 
     Weather is opt-in (it sends HA home coordinates to Aiper's cloud), so the
-    WEATHER platform is only forwarded when the option is enabled. The entry
-    reloads on options change, so setup and unload always see the same set.
+    WEATHER platform is only forwarded when the option is enabled.
+
+    Only call this at setup time. Unloading has to use the platform list that
+    was actually forwarded (kept in the `hass.data` slot): on the reload that
+    follows an options change the new options are already stored, so this would
+    return a different set than the one that was set up.
     """
     platforms = list(PLATFORMS)
     if entry.options.get(CONF_ENABLE_WEATHER, DEFAULT_ENABLE_WEATHER):
@@ -205,12 +209,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             serial_number=sn,
         )
 
+    platforms = _platforms_for(entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "api": api,
         "coordinator": coordinator,
+        "platforms": platforms,
     }
 
-    await hass.config_entries.async_forward_entry_setups(entry, _platforms_for(entry))
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
 
     # Reload on options change
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -261,8 +267,15 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Tear down an account."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, _platforms_for(entry))
-    slot = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
+    slot = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    # Unload exactly what was forwarded at setup. On the reload that follows an
+    # options change the new options are already stored, so recomputing the list
+    # here would try to unload a platform that was never set up (see #55).
+    platforms = slot["platforms"] if slot else _platforms_for(entry)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
+    if not unload_ok:
+        return False
+    hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     if slot:
         api: IrrisenseApi = slot["api"]
         await hass.async_add_executor_job(api.disconnect)
