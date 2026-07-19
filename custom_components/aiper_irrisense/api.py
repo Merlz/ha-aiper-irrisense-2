@@ -23,6 +23,7 @@ import time
 import weakref
 from collections import defaultdict
 from typing import Any, Callable
+from urllib.parse import urlparse
 
 import aiohttp
 import requests
@@ -150,17 +151,42 @@ def _ensure_global_excepthook_installed() -> None:
         _GLOBAL_HOOK_INSTALLED = True
 
 
+# Zone-map URLs come back from Aiper's cloud and are fetched server-side, so
+# constrain them: HTTPS only (no cleartext MITM), and the host must be Aiper's
+# API or its S3 buckets — never an arbitrary or internal address. This blocks
+# a hostile/compromised cloud response from steering the fetch at, e.g., a
+# link-local metadata endpoint or a LAN target (SSRF).
+_ALLOWED_MAP_HOST_SUFFIXES = (".aiper.com", ".amazonaws.com")
+
+
+def _is_allowed_map_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    host = parsed.hostname.lower()
+    return any(
+        host == suffix.lstrip(".") or host.endswith(suffix)
+        for suffix in _ALLOWED_MAP_HOST_SUFFIXES
+    )
+
+
 def _find_map_url(obj: Any) -> str | None:
-    """Recursively scan a dict/list for the first http(s) URL value."""
+    """Recursively scan a dict/list for the first allowed zone-map URL.
+
+    Only ``https://`` URLs on an allowlisted host (see
+    :data:`_ALLOWED_MAP_HOST_SUFFIXES`) are accepted; anything else is skipped
+    so the recursion keeps looking rather than returning an unsafe URL.
+    """
     if isinstance(obj, str):
-        if obj.startswith("http://") or obj.startswith("https://"):
-            return obj
-        return None
+        return obj if _is_allowed_map_url(obj) else None
     if isinstance(obj, dict):
         # Prefer common URL keys first
         for key in ("url", "mapUrl", "fileUrl", "downloadUrl", "mapFileUrl"):
             val = obj.get(key)
-            if isinstance(val, str) and (val.startswith("http://") or val.startswith("https://")):
+            if isinstance(val, str) and _is_allowed_map_url(val):
                 return val
         for val in obj.values():
             found = _find_map_url(val)
@@ -405,8 +431,11 @@ class IrrisenseApi:
         try:
             payload = json.loads(decrypted)
         except Exception as err:
+            # Don't echo the decrypted body — for /login it can contain the
+            # session token. The length is enough to diagnose a parse failure.
             raise Exception(
-                f"Failed to parse decrypted response from {path}: {decrypted[:200]}"
+                f"Failed to parse decrypted response from {path} "
+                f"({len(decrypted)} bytes)"
             ) from err
 
         code = str(payload.get("code"))
@@ -477,7 +506,11 @@ class IrrisenseApi:
             self.base_url = str(domains[0]).rstrip("/")
 
         if not self._token:
-            raise Exception(f"No token in login response: {result}")
+            # Don't dump the response dict — it can carry partial session
+            # material. The key names are enough to tell what came back.
+            raise Exception(
+                f"No token in login response (keys: {sorted(result)})"
+            )
 
         self._session.headers["token"] = self._token
         _LOGGER.info("Irrisense login OK (base_url=%s)", self.base_url)
@@ -555,7 +588,9 @@ class IrrisenseApi:
         out = resp.json()
         creds = out.get("Credentials") or {}
         if not creds.get("AccessKeyId"):
-            _LOGGER.warning("Unexpected Cognito response: %s", out)
+            # Log only the key names — the response can carry an IdentityId or
+            # partial credential material we don't want in the log.
+            _LOGGER.warning("Unexpected Cognito response (keys: %s)", sorted(out))
             return None
         self._aws_credentials = creds
         self._aws_credentials_exp = time.time() + 3300
@@ -993,7 +1028,10 @@ class IrrisenseApi:
             # AttributeError on socket teardown (see the crash shield), and
             # we auto-recover via the thread-excepthook handler below.
             client_id = self._identity_id
-            _LOGGER.info("Irrisense MQTT client_id=%s", client_id)
+            # The client_id is the Cognito identityId (a credential-like
+            # account identifier that diagnostics.py redacts). Keep it at DEBUG
+            # so it doesn't land in default INFO logs users paste into issues.
+            _LOGGER.debug("Irrisense MQTT client_id=%s", client_id)
             self._mqtt_client = AWSIoTMQTTClient(client_id, useWebsocket=True)
             self._mqtt_client.configureEndpoint(self._iot_endpoint, 443)
             self._mqtt_client.configureCredentials(certifi.where())
@@ -1376,7 +1414,13 @@ class IrrisenseApi:
         try:
             with self._cmd_locks[sn]:
                 self._mqtt_client.publish(topic, message, 1)
-            _LOGGER.info("MQTT PUB → %s  (%d bytes)  %s", topic, len(message), message)
+            # The topic embeds the real SN and the message is the full command
+            # frame — only emit it at INFO when the operator opted into MQTT
+            # debug logging (mirrors the inbound-frame gating); otherwise DEBUG.
+            if self.mqtt_debug:
+                _LOGGER.info("MQTT PUB → %s  (%d bytes)  %s", topic, len(message), message)
+            else:
+                _LOGGER.debug("MQTT PUB → %s  (%d bytes)", topic, len(message))
 
             # Record outbound timestamp so the ACK watchdog can detect a
             # silent drop. We intentionally only watch command types that

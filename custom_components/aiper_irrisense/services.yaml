@@ -108,23 +108,28 @@ query_work_info:
 debug_publish:
   name: Debug — raw MQTT publish
   description: >
-    Diagnostic only. Publishes the given raw string payload to the given
-    MQTT topic using the integration's existing AWS IoT connection.
-    Use to test payload variants while reverse-engineering command
+    Diagnostic only. Publishes the given raw string payload to the named
+    device's MQTT command channel using the integration's existing AWS IoT
+    connection. Use to test payload variants while reverse-engineering command
     acceptance. Payload is sent verbatim — no JSON wrapping.
+    Restricted: this service is only registered when MQTT debug logging is
+    enabled on an entry, the caller must be a Home Assistant admin, and the
+    topic must belong to the named device (aiper/things/<sn>/…).
   fields:
     sn:
       name: Device serial
       description: >
-        Any SN belonging to this account — selects which MQTT connection
-        (config entry) to publish through.
+        An SN belonging to this account — selects which MQTT connection
+        (config entry) to publish through, and scopes the allowed topic.
       required: true
       example: "WRX60500001"
       selector:
         text:
     topic:
       name: Topic
-      description: Full MQTT topic. Example — aiper/things/WRX60500001/downChan
+      description: >
+        Full MQTT topic; must start with aiper/things/<sn>/ for the SN above.
+        Example — aiper/things/WRX60500001/downChan
       required: true
       example: "aiper/things/WRX60500001/downChan"
       selector:
