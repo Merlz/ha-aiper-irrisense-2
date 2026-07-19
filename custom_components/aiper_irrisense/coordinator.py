@@ -1227,6 +1227,19 @@ class IrrisenseCoordinator(DataUpdateCoordinator[dict[str, dict[str, Any]]]):
         regions = zmap.get("regions") if isinstance(zmap, dict) else None
         return regions if isinstance(regions, list) else []
 
+    def zone_geometry_for(self, sn: str) -> list[dict[str, Any]]:
+        """Return the RAW zone-map regions, including per-region ``points[]``.
+
+        ``zones_for`` returns the slimmed regions from ``_parse_regions`` which
+        deliberately drop the geometry; the zone-map image renderer needs the
+        untouched shapes, kept under ``slot["map"]["raw"]``.
+        """
+        slot = self._data.get(sn) or {}
+        zmap = slot.get("map") or {}
+        raw = zmap.get("raw") if isinstance(zmap, dict) else None
+        regions = raw.get("regions") if isinstance(raw, dict) else None
+        return regions if isinstance(regions, list) else []
+
     def zone_name(self, sn: str, map_id: int) -> str | None:
         for r in self.zones_for(sn):
             if r.get("id") == map_id:
