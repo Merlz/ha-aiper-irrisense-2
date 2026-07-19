@@ -91,7 +91,9 @@
     },
     "number": {
       "watering_depth": {"name": "Watering depth"},
-      "watering_duration": {"name": "Watering duration"}
+      "watering_duration": {"name": "Watering duration"},
+      "rain_threshold": {"name": "Rain threshold"},
+      "wind_threshold": {"name": "Wind threshold"}
     },
     "select": {
       "nozzle_type": {"name": "Nozzle type"},
