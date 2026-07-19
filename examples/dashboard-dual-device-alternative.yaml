@@ -10,12 +10,16 @@
 # 2. Top-right menu -> "Raw configuration editor".
 # 3. Select-all, delete, paste EVERYTHING between the `# >>>> BEGIN` and
 #    `# <<<< END` markers (those two comment lines can stay too).
-# 4. Scroll down to the zone grid in each device section and update zone
+# 4. Find-and-replace the two device entity prefixes `irrisense_front_lawn`
+#    and `irrisense_back_lawn` with your own devices' prefixes. Find each
+#    under Settings -> Devices & services -> the device -> any entity
+#    (e.g. `sensor.<your_prefix>_active_zone`).
+# 5. Scroll down to the zone grid in each device section and update zone
 #    names, icons, and the lowercase `zname` variable to match your Aiper
 #    app. The zone's region type (Area / Line / Point) is derived live
-#    from `select.irrisense_<device>_watering_zone` options, so you don't
+#    from `select.<your_prefix>_watering_zone` options, so you don't
 #    need to hard-code it.
-# 5. Save.
+# 6. Save.
 #
 # -----------------------------------------------------------------------------
 # HACS cards required  (install all before pasting)

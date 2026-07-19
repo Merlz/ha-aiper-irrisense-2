@@ -11,6 +11,12 @@
 # If you prefer both devices on a single dashboard side-by-side, use
 # `dashboard-dual-device-alternative.yaml` instead.
 #
+# Before saving each dashboard, find-and-replace its device entity prefix
+# (`irrisense_front_lawn` in Dashboard 1, `irrisense_back_lawn` in Dashboard 2)
+# with your own device's prefix — Settings -> Devices & services -> the device
+# -> any entity (e.g. `sensor.<your_prefix>_active_zone`) — and update the
+# per-zone `zname` variables to match your Aiper app.
+#
 # -----------------------------------------------------------------------------
 # HACS cards required  (install all before pasting)
 # -----------------------------------------------------------------------------

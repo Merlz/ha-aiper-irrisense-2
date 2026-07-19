@@ -21,11 +21,20 @@ use them in automations and dashboards.
 - **Control:** start / stop watering per zone, pick dose (Area / Line) or
   duration (Point) from a zone-aware select entity.
 - **Live telemetry:** active zone, elapsed / remaining seconds, progress %,
-  coverage passes, rain-sensing state.
+  coverage passes, head angle, rain-sensing state.
+- **Per-run history sensors:** last-run water used / saved, duration, and
+  outcome status.
+- **Zone-map image entity:** a live SVG of the zone map with the active zone
+  and sprinkler position overlaid.
+- **Resilience:** session-conflict + MQTT-connected diagnostic sensors, and a
+  persisted device list so a transient cloud error doesn't drop your entities.
 - **Device info:** firmware versions (main / MCU / valve), Wi-Fi RSSI,
   lifetime water delivered / saved, watering-event count.
 - **Settings:** toggle rain-sensing, wind-sensing, drainage / pesticide /
   task / water-shortage reminders, and the built-in schedule.
+- **Opt-in extras (off by default):** a weather entity (Aiper WeatherKit —
+  see the privacy note under *Configuration options*) and experimental
+  pesticide-usage / skip-history sensors.
 - **Progress-spike filter** in the coordinator suppresses transient
   `0 → 100 → low` blips that the device's `realTimeProgress` stream
   occasionally emits for Area zones.
@@ -136,6 +145,16 @@ options available via the integration's **Configure** button:
 
 - **MQTT debug logging** — logs every inbound / outbound MQTT frame at INFO
   level. Off by default. Turn on only for diagnostics; the volume is high.
+  (While on, it also unlocks the admin-only `debug_publish` diagnostic service.)
+- **Enable weather** — adds a per-device weather entity backed by Aiper's
+  WeatherKit endpoint. **Off by default, and opt-in for a privacy reason:**
+  enabling it sends your Home Assistant home latitude/longitude to Aiper's
+  cloud on every refresh. Leave it off unless you want that. When on, the
+  **Weather refresh (hours)** option controls how often it polls.
+- **Enable experimental sensors** — opt-in pesticide-usage and skip-history
+  sensors. Off by default. The request paths are verified but the record
+  shapes couldn't be fully exercised on test hardware, so they're marked
+  experimental — see the note under *Known limitations*.
 
 ## Known limitations
 
@@ -194,6 +213,11 @@ issue with what you found — the community will benefit):
   counter only (current pass number, 0-indexed).
 - Occasional transient "Could not convert duration" warnings on
   watering-state transitions. Cosmetic; the run itself is unaffected.
+- **Experimental sensors** (pesticide usage, skip history) are opt-in and
+  best-effort: the cloud request paths are verified, but the per-record
+  field shapes couldn't be confirmed on test hardware (no pesticide
+  cartridge / no skipped runs to exercise them). If you have real data,
+  please report the record shapes so they can be finalised.
 
 ## Troubleshooting
 
@@ -212,6 +236,16 @@ issue with what you found — the community will benefit):
 - **Wrong dose options** — the Dose / Duration select adapts to the
   selected zone's region type. If the options look wrong, the integration's
   zone-type cache may be stale; reload the integration to refresh it.
+- **Blank / white dashboard after pasting an example** — one of the required
+  custom cards isn't installed. The example dashboards need `custom:mushroom`,
+  `custom:stack-in-card`, `custom:button-card`, `custom:apexcharts-card`, and
+  `custom:card-mod` (all in the default HACS frontend registry). Install all
+  five, then hard-refresh the browser (Cmd/Ctrl-Shift-R).
+- **Dashboard shows the wrong device / empty tiles** — the examples are keyed
+  to a device entity prefix (e.g. `irrisense_garden`). Find-and-replace that
+  prefix with your own device's prefix (Settings → Devices & services →
+  your device → any entity, e.g. `sensor.<your_prefix>_active_zone`) before
+  saving.
 
 For anything else, open an issue with:
 - HA version
